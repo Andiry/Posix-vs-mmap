@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include<stdio.h>
 #include<fcntl.h>
 #include<time.h>
@@ -30,7 +32,7 @@ int main(void)
 		memset(buf, c, start_size);
 		c++;
 
-		fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR); 
+		fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT); 
 
 		count = SIZE / start_size;
 		clock_gettime(CLOCK_MONOTONIC, &start);

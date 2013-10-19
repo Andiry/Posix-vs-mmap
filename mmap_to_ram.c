@@ -40,7 +40,7 @@ int main(void)
 			buf += start_size;
 		}
 
-		msync(origin_data, SIZE, MS_ASYNC);
+//		msync(origin_data, SIZE, MS_ASYNC);
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		printf("Mmap: size %d bytes, %d times,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", start_size, count, time, 4.0 * 1e9 / time);
