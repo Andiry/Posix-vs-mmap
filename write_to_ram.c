@@ -8,7 +8,8 @@
 #include<stdlib.h>
 #include<sys/mman.h>
 
-#define SIZE	(4 * 1024 * 1024) 
+#define SIZE		(4 * 1024 * 1024) 
+#define FILE_SIZE	(4 * 1024 * 1024) 
 
 int main(void)
 {
@@ -20,7 +21,7 @@ int main(void)
 	void *buf1 = NULL;
 	char *buf;
 
-	posix_memalign(&buf1, SIZE, SIZE); // up to 4MB, same as ram disk
+	posix_memalign(&buf1, FILE_SIZE, FILE_SIZE); // up to 1MB
 	if (!buf1) {
 		printf("ERROR!\n");
 		return 0;
@@ -28,13 +29,13 @@ int main(void)
 
 	buf = (char *)buf1;
 
-	for (start_size = 1; start_size <= SIZE; start_size <<= 1) {
+	for (start_size = 1; start_size <= FILE_SIZE; start_size <<= 1) {
 		memset(buf, c, start_size);
 		c++;
 
 		fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT); 
 
-		count = SIZE / start_size;
+		count = FILE_SIZE / start_size;
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++)
 			write(fd, buf, start_size);
