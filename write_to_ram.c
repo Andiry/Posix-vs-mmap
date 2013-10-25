@@ -11,13 +11,15 @@
 #define SIZE		(4 * 1024 * 1024) 
 #define FILE_SIZE	(4 * 1024 * 1024) 
 
+const int start_size = 2097152;
+
 int main(void)
 {
 	int fd, i;
 	unsigned long time;
 	char c = 'a';
 	struct timespec start, end;
-	int start_size = 1, count;
+	int size, count;
 	void *buf1 = NULL;
 	char *buf;
 
@@ -29,20 +31,20 @@ int main(void)
 
 	buf = (char *)buf1;
 
-	for (start_size = 1; start_size <= FILE_SIZE; start_size <<= 1) {
-		memset(buf, c, start_size);
+	for (size = start_size; size <= FILE_SIZE; size <<= 1) {
+		memset(buf, c, size);
 		c++;
 
 		fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT); 
 
-		count = FILE_SIZE / start_size;
+		count = FILE_SIZE / size;
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++)
-			write(fd, buf, start_size);
+			write(fd, buf, size);
 
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		printf("Size %d bytes,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", start_size, time, 4.0 * 1e9 / time);
+		printf("Size %d bytes,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", size, time, 4.0 * 1e9 / time);
 		close(fd);
 	}
 

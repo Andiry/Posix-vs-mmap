@@ -14,21 +14,23 @@ char *buf;
 char *data;
 int num_threads;
 
+const int start_size = 2097152;
+
 void* mmap_transfer(void *arg)
 {
 	int id = (int)((*(int *)arg) & 0xff);
-	int start_size = (int)((*(int *)arg) >> 8);
+	int size = (int)((*(int *)arg) >> 8);
 	int offset = id * SIZE / num_threads;
 	int count, i;
 	char *start_data = data + offset;
 	char *start_buf = buf + offset;
 
 //	printf("%d %d\n", id, start_size);
-	count = SIZE / (start_size * num_threads);
+	count = SIZE / (size * num_threads);
 	for (i = 0; i < count; i++) {
-		memcpy(start_data, start_buf, start_size);
-		start_data += start_size;
-		start_buf += start_size;
+		memcpy(start_data, start_buf, size);
+		start_data += size;
+		start_buf += size;
 	}
 }
 
@@ -36,11 +38,11 @@ int main(int argc, char ** argv)
 {
 	int fd, i;
 	unsigned long time;
-	char c = 'a';
+	char c = 'A';
 	char *origin_data;
 	struct timespec start, end;
 	void *buf1 = NULL;
-	int start_size, count;
+	int size, count;
 	pthread_t *pid;
 	int *pdata;
 	void *thread_ret;
@@ -61,14 +63,14 @@ int main(int argc, char ** argv)
 	data = (char *)mmap(NULL, SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
 	origin_data = data;
 
-	for (start_size = 1; start_size <= SIZE / num_threads; start_size <<= 1) {
+	for (size = start_size; size <= SIZE / num_threads; size <<= 1) {
 		buf = (char *)buf1;
 		memset(buf, c, SIZE);
 		c++;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < num_threads; i++) {
-			pdata[i] = (start_size << 8) + i;
+			pdata[i] = (size << 8) + i;
 //			printf("0x%x\n", pdata[i]);
 			pthread_create(&pid[i], NULL, mmap_transfer, &pdata[i]);
 		}
@@ -81,7 +83,7 @@ int main(int argc, char ** argv)
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		printf("Mmap: size %d bytes, %d threads,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", start_size, num_threads, time, 4.0 * 1e9 / time);
+		printf("Mmap: size %d bytes, %d threads,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", size, num_threads, time, 4.0 * 1e9 / time);
 	}
 
 	munmap(origin_data, SIZE);
