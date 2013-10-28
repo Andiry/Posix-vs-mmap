@@ -8,15 +8,14 @@
 #include<string.h>
 #include<pthread.h>
 
-#define END_SIZE	(1 * 1024 * 1024) 
-#define FILE_SIZE	(4 * 1024 * 1024) 
+#define SIZE	(4 * 1024 * 1024) 
 
 char *buf;
 char *data;
+int num_threads;
 
-const int start_size = 512;
+const int start_size = 1;
 
-#if 0
 void* mmap_transfer(void *arg)
 {
 	int id = (int)((*(int *)arg) & 0xff);
@@ -34,7 +33,6 @@ void* mmap_transfer(void *arg)
 		start_buf += size;
 	}
 }
-#endif
 
 int main(int argc, char ** argv)
 {
@@ -49,36 +47,49 @@ int main(int argc, char ** argv)
 	int *pdata;
 	void *thread_ret;
 
-	posix_memalign(&buf1, FILE_SIZE, FILE_SIZE);
+	if (argc < 2)
+		num_threads = 1;
+	else
+		num_threads = atoi(argv[1]);
+
+	pid = (pthread_t *)malloc(sizeof(pthread_t) * num_threads); // pthread id array
+	pdata = (int *)malloc(sizeof(int) * num_threads); // pthread data array
+
+	posix_memalign(&buf1, SIZE, SIZE);
 
 	buf = (char *)buf1;
 
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR); 
-	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+	data = (char *)mmap(NULL, SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
 	origin_data = data;
 
-	for (size = start_size; size <= END_SIZE; size <<= 1) {
+	for (size = start_size; size <= SIZE / num_threads; size <<= 1) {
 		buf = (char *)buf1;
-		memset(buf, c, size);
+		memset(buf, c, SIZE);
 		c++;
-		data = origin_data;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		count = FILE_SIZE / size;
-		for (i = 0; i < count; i++) {
-			memcpy(data, buf, size);
-			data += size;
+		for (i = 0; i < num_threads; i++) {
+			pdata[i] = (size << 8) + i;
+//			printf("0x%x\n", pdata[i]);
+			pthread_create(&pid[i], NULL, mmap_transfer, &pdata[i]);
 		}
 
-		msync(origin_data, FILE_SIZE, MS_ASYNC);
+//		clock_gettime(CLOCK_MONOTONIC, &start);
+		for (i = 0; i < num_threads; i++)
+			pthread_join(pid[i], &thread_ret);
+
+		msync(origin_data, SIZE, MS_ASYNC);
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		printf("Mmap: size %d bytes, %d times,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time, FILE_SIZE * 1024.0 / time);
+		printf("Mmap: size %d bytes, %d threads,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", size, num_threads, time, 4.0 * 1e9 / time);
 	}
 
-	munmap(origin_data, FILE_SIZE);
+	munmap(origin_data, SIZE);
 	close(fd);
 	free(buf1);
+	free(pid);
+	free(pdata);
 	return 0;
 }

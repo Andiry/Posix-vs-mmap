@@ -8,10 +8,10 @@
 #include<stdlib.h>
 #include<sys/mman.h>
 
-#define SIZE		(4 * 1024 * 1024) 
+#define END_SIZE	(1 * 1024 * 1024) 
 #define FILE_SIZE	(4 * 1024 * 1024) 
 
-const int start_size = 2097152;
+const int start_size = 512;
 
 int main(void)
 {
@@ -31,7 +31,7 @@ int main(void)
 
 	buf = (char *)buf1;
 
-	for (size = start_size; size <= FILE_SIZE; size <<= 1) {
+	for (size = start_size; size <= END_SIZE; size <<= 1) {
 		memset(buf, c, size);
 		c++;
 
@@ -44,7 +44,7 @@ int main(void)
 
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		printf("Size %d bytes,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", size, time, 4.0 * 1e9 / time);
+		printf("Size %d bytes,\t %d times,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time, FILE_SIZE * 1024.0 / time);
 		close(fd);
 	}
 
