@@ -9,7 +9,7 @@
 #include<pthread.h>
 
 #define END_SIZE	(1 * 1024 * 1024) 
-#define FILE_SIZE	(4 * 1024 * 1024) 
+#define FILE_SIZE	(46 * 1024 * 1024) 
 
 char *buf;
 char *data;
@@ -48,8 +48,29 @@ int main(int argc, char ** argv)
 	pthread_t *pid;
 	int *pdata;
 	void *thread_ret;
+	FILE *output;
+	char xip_enabled[20];
+	char use_nvp[20];
+	struct tm *local;
 
-	posix_memalign(&buf1, FILE_SIZE, FILE_SIZE);
+	if (argc < 3) {
+		printf("Usage: ./mmap_to_ram $XIP $Quill\n");
+		return 0;
+	}
+
+	if (!strcmp(argv[1], "0"))
+		strcpy(xip_enabled, "No_XIP");
+	else
+		strcpy(xip_enabled, "XIP");
+
+	if (!strcmp(argv[2], "0"))
+		strcpy(use_nvp, "Posix-mmap");
+	else
+		strcpy(use_nvp, "Quill-mmap");
+
+	output = fopen("results.csv", "a");
+
+	posix_memalign(&buf1, END_SIZE, END_SIZE);
 
 	buf = (char *)buf1;
 
@@ -75,8 +96,10 @@ int main(int argc, char ** argv)
 
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		printf("Mmap: size %d bytes, %d times,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time, FILE_SIZE * 1024.0 / time);
+		fprintf(output, "%s,%s,%d,%d,%ld,%f\n", use_nvp, xip_enabled, size, count, time, FILE_SIZE * 1024.0 / time);
 	}
 
+	fclose(output);
 	munmap(origin_data, FILE_SIZE);
 	close(fd);
 	free(buf1);
