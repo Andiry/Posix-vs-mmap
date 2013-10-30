@@ -9,26 +9,31 @@
 #include<sys/mman.h>
 
 #define END_SIZE	(1 * 1024 * 1024) 
-#define FILE_SIZE	(46 * 1024 * 1024) 
+//const unsigned long long FILE_SIZE = 1L * 1024 * 1024 * 1024; 
 
 const int start_size = 512;
 
 int main(int argc, char **argv)
 {
 	int fd, i;
-	unsigned long time1;
+	unsigned long long time1;
+	unsigned long long FILE_SIZE;
 	char c = 'a';
 	struct timespec start, end;
-	int size, count;
+	int size;
+	unsigned long long count;
 	void *buf1 = NULL;
 	char *buf;
 	FILE *output;
 	char xip_enabled[20];
 	char quill_enabled[20];
+	char filename[60];
 	struct tm *local;
 
-	if (argc < 3)
+	if (argc < 5) {
+		printf("Usage: ./write_to_ram $XIP $Quill $FILE_SIZE $filename\n");
 		return 0;
+	}
 
 	if (!strcmp(argv[1], "0"))
 		strcpy(xip_enabled, "No_XIP");
@@ -40,7 +45,10 @@ int main(int argc, char **argv)
 	else
 		strcpy(quill_enabled, "Quill");
 
-	output = fopen("results.csv", "a");
+	FILE_SIZE = atoll(argv[3]);
+
+	strcpy(filename, argv[4]);
+	output = fopen(filename, "a");
 
 	posix_memalign(&buf1, END_SIZE, END_SIZE); // up to 1MB
 	if (!buf1) {
@@ -63,8 +71,8 @@ int main(int argc, char **argv)
 
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		time1 = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		printf("Size %d bytes,\t %d times,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time1, FILE_SIZE * 1024.0 / time1);
-		fprintf(output, "%s,%s,%d,%d,%ld,%f\n", quill_enabled, xip_enabled, size, count, time1, FILE_SIZE * 1024.0 / time1);
+		printf("Size %d bytes,\t %lld times,\t %lld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time1, FILE_SIZE * 1024.0 / time1);
+		fprintf(output, "%s,%s,%d,%lld,%lld,%lld,%f\n", quill_enabled, xip_enabled, size, FILE_SIZE, count, time1, FILE_SIZE * 1.0 / time1);
 	}
 
 	fclose(output);
