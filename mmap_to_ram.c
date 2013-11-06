@@ -8,7 +8,7 @@
 #include<string.h>
 #include<pthread.h>
 
-#define END_SIZE	(1 * 1024 * 1024) 
+#define END_SIZE	(64 * 1024 * 1024) 
 //const unsigned long long FILE_SIZE = 1L * 1024 * 1024 * 1024; 
 
 char *buf;
@@ -50,29 +50,32 @@ int main(int argc, char ** argv)
 	int *pdata;
 	void *thread_ret;
 	FILE *output;
+	char fs_type[20];
 	char xip_enabled[20];
 	char use_nvp[20];
 	char filename[60];
 	struct tm *local;
 
-	if (argc < 5) {
-		printf("Usage: ./mmap_to_ram $XIP $Quill $FILE_SIZE $filename\n");
+	if (argc < 6) {
+		printf("Usage: ./mmap_to_ram $FS $XIP $Quill $FILE_SIZE $filename\n");
 		return 0;
 	}
 
-	if (!strcmp(argv[1], "0"))
+	strcpy(fs_type, argv[1]);
+
+	if (!strcmp(argv[2], "0"))
 		strcpy(xip_enabled, "No_XIP");
 	else
 		strcpy(xip_enabled, "XIP");
 
-	if (!strcmp(argv[2], "0"))
+	if (!strcmp(argv[3], "0"))
 		strcpy(use_nvp, "Posix-mmap");
 	else
 		strcpy(use_nvp, "Quill-mmap");
 
-	FILE_SIZE = atoll(argv[3]);
+	FILE_SIZE = atoll(argv[4]);
 
-	strcpy(filename, argv[4]);
+	strcpy(filename, argv[5]);
 	output = fopen(filename, "a");
 
 	posix_memalign(&buf1, END_SIZE, END_SIZE);
@@ -101,7 +104,7 @@ int main(int argc, char ** argv)
 
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		printf("Mmap: size %d bytes, %d times,\t %lld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time, FILE_SIZE * 1024.0 / time);
-		fprintf(output, "%s,%s,%d,%lld,%d,%lld,%f\n", use_nvp, xip_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
+		fprintf(output, "%s,%s,%s,%d,%lld,%d,%lld,%f\n", fs_type, use_nvp, xip_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
 	}
 
 	fclose(output);
