@@ -8,33 +8,9 @@
 #include<string.h>
 #include<pthread.h>
 
-#define END_SIZE	(64 * 1024 * 1024) 
-//const unsigned long long FILE_SIZE = 1L * 1024 * 1024 * 1024; 
-
-char *buf;
-char *data;
+#define END_SIZE	(64UL * 1024 * 1024) 
 
 const int start_size = 512;
-
-#if 0
-void* mmap_transfer(void *arg)
-{
-	int id = (int)((*(int *)arg) & 0xff);
-	int size = (int)((*(int *)arg) >> 8);
-	int offset = id * SIZE / num_threads;
-	int count, i;
-	char *start_data = data + offset;
-	char *start_buf = buf + offset;
-
-//	printf("%d %d\n", id, start_size);
-	count = SIZE / (size * num_threads);
-	for (i = 0; i < count; i++) {
-		memcpy(start_data, start_buf, size);
-		start_data += size;
-		start_buf += size;
-	}
-}
-#endif
 
 int main(int argc, char ** argv)
 {
@@ -43,18 +19,16 @@ int main(int argc, char ** argv)
 	unsigned long long FILE_SIZE;
 	char c = 'A';
 	char *origin_data;
+	char *data;
 	struct timespec start, end;
 	void *buf1 = NULL;
+	char *buf;
 	int size, count;
-	pthread_t *pid;
-	int *pdata;
-	void *thread_ret;
 	FILE *output;
 	char fs_type[20];
 	char xip_enabled[20];
 	char use_nvp[20];
 	char filename[60];
-	struct tm *local;
 
 	if (argc < 6) {
 		printf("Usage: ./mmap_to_ram $FS $XIP $Quill $FILE_SIZE $filename\n");
@@ -87,7 +61,6 @@ int main(int argc, char ** argv)
 	origin_data = data;
 
 	for (size = start_size; size <= END_SIZE; size <<= 1) {
-		buf = (char *)buf1;
 		memset(buf, c, size);
 		c++;
 		data = origin_data;
