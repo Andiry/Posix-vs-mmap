@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<malloc.h>
@@ -86,7 +88,7 @@ int main(int argc, char ** argv)
 
 	buf = (char *)buf1;
 
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR); 
+	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT); 
 	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
 	origin_data = data;
 
