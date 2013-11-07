@@ -28,7 +28,7 @@ def main():
 	file.close(f)
 
 #	file_sizes = ['4194304', '134217728', '1073741824']
-	file_sizes = ['1073741824']
+	file_sizes = ['1G']
 	for filesize in file_sizes:
 #		os.system('sh clean.sh')
 #		time.sleep(1)
