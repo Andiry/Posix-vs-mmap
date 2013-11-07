@@ -17,7 +17,9 @@ int main(int argc, char ** argv)
 	int fd, i;
 	unsigned long long time;
 	unsigned long long FILE_SIZE;
+	size_t len;
 	char c = 'A';
+	char unit;
 	char *origin_data;
 	char *data;
 	struct timespec start, end;
@@ -26,6 +28,7 @@ int main(int argc, char ** argv)
 	int size, count;
 	FILE *output;
 	char fs_type[20];
+	char file_size_num[20];
 	char xip_enabled[20];
 	char use_nvp[20];
 	char filename[60];
@@ -47,7 +50,34 @@ int main(int argc, char ** argv)
 	else
 		strcpy(use_nvp, "Quill-mmap");
 
-	FILE_SIZE = atoll(argv[4]);
+	strcpy(file_size_num, argv[4]);
+	len = strlen(file_size_num);
+	unit = file_size_num[len - 1];
+	file_size_num[len - 1] = '\0';
+	FILE_SIZE = atoll(file_size_num);
+	switch (unit) {
+	case 'K':
+	case 'k':
+		FILE_SIZE *= 1024;
+		break;
+	case 'M':
+	case 'm':
+		FILE_SIZE *= 1048576;
+		break;
+	case 'G':
+	case 'g':
+		FILE_SIZE *= 1073741824;
+		break;
+	default:
+		printf("ERROR: FILE_SIZE should be #K/M/G format.\n");
+		return 0;
+		break;
+	}
+
+	if (FILE_SIZE < END_SIZE)
+		FILE_SIZE = END_SIZE;
+	if (FILE_SIZE > 2147483648) // RAM disk size
+		FILE_SIZE = 2147483648;
 
 	strcpy(filename, argv[5]);
 	output = fopen(filename, "a");
@@ -64,9 +94,9 @@ int main(int argc, char ** argv)
 		memset(buf, c, size);
 		c++;
 		data = origin_data;
+		count = FILE_SIZE / size;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		count = FILE_SIZE / size;
 		for (i = 0; i < count; i++) {
 			memcpy(data, buf, size);
 			data += size;

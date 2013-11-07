@@ -17,7 +17,9 @@ int main(int argc, char **argv)
 	int fd, i;
 	unsigned long long time;
 	unsigned long long FILE_SIZE;
+	size_t len;
 	char c = 'a';
+	char unit;
 	struct timespec start, end;
 	int size;
 	unsigned long long count;
@@ -27,6 +29,7 @@ int main(int argc, char **argv)
 	char fs_type[20];
 	char xip_enabled[20];
 	char quill_enabled[20];
+	char file_size_num[20];
 	char filename[60];
 
 	if (argc < 6) {
@@ -46,14 +49,41 @@ int main(int argc, char **argv)
 	else
 		strcpy(quill_enabled, "Quill");
 
-	FILE_SIZE = atoll(argv[4]);
+	strcpy(file_size_num, argv[4]);
+	len = strlen(file_size_num);
+	unit = file_size_num[len - 1];
+	file_size_num[len - 1] = '\0';
+	FILE_SIZE = atoll(file_size_num);
+	switch (unit) {
+	case 'K':
+	case 'k':
+		FILE_SIZE *= 1024;
+		break;
+	case 'M':
+	case 'm':
+		FILE_SIZE *= 1048576;
+		break;
+	case 'G':
+	case 'g':
+		FILE_SIZE *= 1073741824;
+		break;
+	default:
+		printf("ERROR: FILE_SIZE should be #K/M/G format.\n");
+		return 0;
+		break;
+	}
+
+	if (FILE_SIZE < END_SIZE)
+		FILE_SIZE = END_SIZE;
+	if (FILE_SIZE > 2147483648) // RAM disk size
+		FILE_SIZE = 2147483648;
 
 	strcpy(filename, argv[5]);
 	output = fopen(filename, "a");
 
 	posix_memalign(&buf1, END_SIZE, END_SIZE); // up to 1MB
 	if (!buf1) {
-		printf("ERROR!\n");
+		printf("ERROR - NOMEM!\n");
 		return 0;
 	}
 
@@ -64,13 +94,14 @@ int main(int argc, char **argv)
 		memset(buf, c, size);
 		c++;
 		lseek(fd, 0, SEEK_SET);
-
 		count = FILE_SIZE / size;
+
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++)
 			write(fd, buf, size);
 
 		clock_gettime(CLOCK_MONOTONIC, &end);
+
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		printf("Size %d bytes,\t %lld times,\t %lld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time, FILE_SIZE * 1024.0 / time);
 		fprintf(output, "%s,%s,%s,%d,%lld,%lld,%lld,%f\n", fs_type, quill_enabled, xip_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
