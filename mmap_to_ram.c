@@ -17,7 +17,7 @@ const int start_size = 512;
 int main(int argc, char ** argv)
 {
 	int fd, i;
-	unsigned long long time;
+	long long time;
 	unsigned long long FILE_SIZE;
 	size_t len;
 	char c = 'A';
@@ -84,11 +84,14 @@ int main(int argc, char ** argv)
 	strcpy(filename, argv[5]);
 	output = fopen(filename, "a");
 
-	posix_memalign(&buf1, END_SIZE, END_SIZE);
+	if (posix_memalign(&buf1, END_SIZE, END_SIZE)) {
+		printf("ERROR - POSIX NOMEM!\n");
+		return 0;
+	}
 
 	buf = (char *)buf1;
 
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT); 
+	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
 	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
 	origin_data = data;
 
