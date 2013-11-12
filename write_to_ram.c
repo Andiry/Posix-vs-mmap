@@ -8,7 +8,7 @@
 #include<stdlib.h>
 #include<sys/mman.h>
 
-#define END_SIZE	(1 * 1024 * 1024) 
+#define END_SIZE	(64 * 1024 * 1024) 
 //const unsigned long long FILE_SIZE = 1L * 1024 * 1024 * 1024; 
 
 const int start_size = 512;

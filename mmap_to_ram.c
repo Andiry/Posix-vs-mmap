@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<malloc.h>
@@ -8,7 +10,7 @@
 #include<string.h>
 #include<pthread.h>
 
-#define END_SIZE	(1 * 1024 * 1024) 
+#define END_SIZE	(64 * 1024 * 1024) 
 //const unsigned long long FILE_SIZE = 1L * 1024 * 1024 * 1024; 
 
 char *buf;
@@ -79,7 +81,7 @@ int main(int argc, char ** argv)
 
 	buf = (char *)buf1;
 
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR); 
+	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
 	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
 	origin_data = data;
 
