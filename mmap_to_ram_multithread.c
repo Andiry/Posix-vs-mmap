@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<malloc.h>
@@ -8,13 +10,9 @@
 #include<string.h>
 #include<pthread.h>
 
-#define SIZE	(4 * 1024 * 1024) 
+#define END_SIZE	(64UL * 1024 * 1024) 
 
-char *buf;
-char *data;
-int num_threads;
-
-const int start_size = 1;
+const int start_size = 512;
 
 void* mmap_transfer(void *arg)
 {
@@ -37,15 +35,26 @@ void* mmap_transfer(void *arg)
 int main(int argc, char ** argv)
 {
 	int fd, i;
-	unsigned long time;
+	long long time;
+	unsigned long long FILE_SIZE;
+	size_t len;
+	char unit
 	char c = 'A';
 	char *origin_data;
+	char *data;
 	struct timespec start, end;
 	void *buf1 = NULL;
+	char *buf;
 	int size, count;
 	pthread_t *pid;
 	int *pdata;
 	void *thread_ret;
+	FILE *output;
+	char fs_type[20];
+	char file_size_num[20];
+	char xip_enabled[20];
+	char use_nvp[20];
+	char filename[60];
 
 	if (argc < 2)
 		num_threads = 1;
