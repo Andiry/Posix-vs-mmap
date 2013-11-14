@@ -1,4 +1,4 @@
-# tracer: function_graph 687 853
+# tracer: function_graph 687 853 average: 647ns
 #
 # CPU  DURATION                  FUNCTION CALLS
 # |     |   |                     |   |   |   |
