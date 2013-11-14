@@ -1,0 +1,44 @@
+# tracer: function_graph 7188ns
+#
+# CPU  DURATION                  FUNCTION CALLS
+# |     |   |                     |   |   |   |
+ 7)               |  vfs_write() {
+ 7)               |    rw_verify_area() {
+ 7)               |      security_file_permission() {
+ 7)               |        apparmor_file_permission() {
+ 7)   0.058 us    |          common_file_perm();
+ 7)   0.366 us    |        }
+ 7)   0.567 us    |      }
+ 7)   0.765 us    |    }
+ 7)   0.118 us    |    __sb_start_write();
+ 7)               |    pmfs_xip_file_write [pmfs]() {
+ 7)   0.051 us    |      __sb_start_write();
+ 7)               |      mutex_lock() {
+ 7)   0.023 us    |        _cond_resched();
+ 7)   0.216 us    |      }
+ 7)   0.187 us    |      pmfs_find_data_block [pmfs]();
+ 7)   0.020 us    |      pmfs_xip_mem_protect [pmfs]();
+ 7)   0.019 us    |      pmfs_xip_mem_protect [pmfs]();
+ 7)   0.017 us    |      get_seconds();
+ 7)   0.017 us    |      mutex_unlock();
+ 7)   0.038 us    |      __sb_end_write();
+ 7)   2.702 us    |    }
+ 7)   0.027 us    |    __fsnotify_parent();
+ 7)               |    fsnotify() {
+ 7)   0.054 us    |      __srcu_read_lock();
+ 7)   0.033 us    |      __srcu_read_unlock();
+ 7)   0.462 us    |    }
+ 7)   0.038 us    |    __sb_end_write();
+ 7)   5.312 us    |  }
+ 5)               |  vfs_write() {
+ 5)               |    rw_verify_area() {
+ 5)               |      security_file_permission() {
+ 5)               |        apparmor_file_permission() {
+ 5)   0.052 us    |          common_file_perm();
+ 5)   0.304 us    |        }
+ 5)   0.542 us    |      }
+ 5)   0.749 us    |    }
+ 5)   0.047 us    |    __sb_start_write();
+ 5)               |    mutex_lock() {
+ 5)   0.018 us    |      _cond_resched();
+ 5)   0.208 us    |    }
