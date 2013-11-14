@@ -18,7 +18,6 @@ int main(int argc, char **argv)
 	long long time;
 	unsigned long long FILE_SIZE;
 	size_t len;
-	off_t offset;
 	char c = 'a';
 	char unit;
 	struct timespec start, end;
@@ -74,8 +73,8 @@ int main(int argc, char **argv)
 		break;
 	}
 
-	if (FILE_SIZE < 4096)
-		FILE_SIZE = 4096;
+	if (FILE_SIZE < END_SIZE)
+		FILE_SIZE = END_SIZE;
 	if (FILE_SIZE > 2147483648) // RAM disk size
 		FILE_SIZE = 2147483648;
 
@@ -89,48 +88,23 @@ int main(int argc, char **argv)
 
 	buf = (char *)buf1;
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
-//	fd = open("/dev/null", O_CREAT | O_RDWR | O_DIRECT, 0640); 
-	printf("fd: %d\n", fd);
-//	for (size = start_size; size <= END_SIZE; size <<= 1) {
-	size = 4096;
+
+	for (size = start_size; size <= END_SIZE; size <<= 1) {
 		memset(buf, c, size);
 		c++;
 		lseek(fd, 0, SEEK_SET);
-		offset = 0;
-
-		// Warm the cache
-		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
-		for (i = 0; i < 262144; i++) {
-			pwrite(fd, buf, size, offset);
-			offset += size;
-		}
-		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
-		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		printf("Write warm: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, 262144, time, time / 262144, FILE_SIZE * 1024.0 / time);
-
-		lseek(fd, 0, SEEK_SET);
 		count = FILE_SIZE / size;
-		offset = 0;
 
-		system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
-	
-		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
-//		clock_gettime(CLOCK_MONOTONIC, &start);
-		for (i = 0; i < count; i++) {
-			pwrite(fd, buf, size, offset);
-//			if (pwrite(fd, buf, size, offset) != size)
-//				printf("ERROR!\n");
-			offset += size;
-		}
-//			pread(fd, buf, size);
-		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
-//		clock_gettime(CLOCK_MONOTONIC, &end);
+		clock_gettime(CLOCK_MONOTONIC, &start);
+		for (i = 0; i < count; i++)
+			write(fd, buf, size);
 
-		system("echo 0 > /sys/kernel/debug/tracing/tracing_on");
+		clock_gettime(CLOCK_MONOTONIC, &end);
+
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		printf("Write: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
+		printf("Write: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time, FILE_SIZE * 1024.0 / time);
 		fprintf(output, "%s,%s,%s,%d,%lld,%lld,%lld,%f\n", fs_type, quill_enabled, xip_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
-//	}
+	}
 
 	fclose(output);
 	close(fd);
