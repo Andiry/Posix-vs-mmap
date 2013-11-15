@@ -35,6 +35,7 @@ int main(int argc, char **argv)
 	char quill_enabled[20];
 	char file_size_num[20];
 	char filename[60];
+	int enable_ftrace;
 
 	if (argc < 6) {
 		printf("Usage: ./write_to_ram $FS $XIP $Quill $FILE_SIZE $filename\n");
@@ -95,35 +96,36 @@ int main(int argc, char **argv)
 //	fd = open("/dev/null", O_CREAT | O_RDWR | O_DIRECT, 0640); 
 	printf("fd: %d\n", fd);
 //	for (size = start_size; size <= END_SIZE; size <<= 1) {
-	size = 4096;
+//	size = 8192;
+	size = atoi(argv[2]);
+	enable_ftrace = atoi(argv[3]);
 		memset(buf, c, size);
 		c++;
 		lseek(fd, 0, SEEK_SET);
 		offset = 0;
 
-		// Warm the cache
-//		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+		count = 1073741824 / size;
+		// Warm the cache with 1GB write
 		gettimeofday(&begin, &tz);
 		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-		for (i = 0; i < 262144; i++) {
+		for (i = 0; i < count; i++) {
 			pwrite(fd, buf, size, offset);
 			offset += size;
 		}
-//		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
 		clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 		gettimeofday(&finish, &tz);
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
-		printf("Write warm: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, 262144, time, time / 262144, FILE_SIZE * 1024.0 / time);
+		printf("Write warm: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
 		printf("Warm cache process %lld microseconds\n", time1);
 
 		lseek(fd, 0, SEEK_SET);
 		count = FILE_SIZE / size;
 		offset = 0;
 
-		system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
+		if (enable_ftrace)
+			system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
 	
-//		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
 		gettimeofday(&begin, &tz);
 		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 		for (i = 0; i < count; i++) {
@@ -132,12 +134,11 @@ int main(int argc, char **argv)
 //				printf("ERROR!\n");
 			offset += size;
 		}
-//			pread(fd, buf, size);
-//		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
 		clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 		gettimeofday(&finish, &tz);
 
-		system("echo 0 > /sys/kernel/debug/tracing/tracing_on");
+		if (enable_ftrace)
+			system("echo 0 > /sys/kernel/debug/tracing/tracing_on");
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
 		printf("Write: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
