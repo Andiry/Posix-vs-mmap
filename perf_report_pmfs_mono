@@ -1,0 +1,60 @@
+# ======== 673 640
+# captured on: Fri Nov 15 11:31:32 2013
+# hostname : brienza-desktop
+# os release : 3.11.0+
+# perf version : 3.11.g68ac3d
+# arch : x86_64
+# nrcpus online : 8
+# nrcpus avail : 8
+# cpudesc : Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz
+# cpuid : GenuineIntel,6,58,9
+# total memory : 2048648 kB
+# cmdline : /usr/local/bin/perf record ./write_to_ram Ext2 1 0 64m test.csv 
+# event : name = cycles, type = 0, config = 0x0, config1 = 0x0, config2 = 0x0, excl_usr = 0, excl_kern = 0, excl_host = 0, excl_guest = 1, precise_ip = 0
+# HEADER_CPU_TOPOLOGY info available, use -I to display
+# HEADER_NUMA_TOPOLOGY info available, use -I to display
+# pmu mappings: cpu = 4, software = 1, tracepoint = 2, uncore_cbox_0 = 6, uncore_cbox_1 = 7, uncore_cbox_2 = 8, uncore_cbox_3 = 9, breakpoint = 5
+# ========
+#
+# Samples: 753  of event 'cycles'
+# Event count (approx.): 694167859
+#
+# Overhead       Command      Shared Object                        Symbol
+# ........  ............  .................  ............................
+#
+    37.87%  write_to_ram  [kernel.kallsyms]  [k] __copy_user_nocache     
+    19.71%  write_to_ram  [pmfs]             [k] pmfs_xip_file_write     
+    12.46%  write_to_ram  [kernel.kallsyms]  [k] mutex_unlock            
+     4.73%  write_to_ram  [kernel.kallsyms]  [k] __sb_end_write          
+     4.59%  write_to_ram  [kernel.kallsyms]  [k] __sb_start_write        
+     2.45%  write_to_ram  [kernel.kallsyms]  [k] system_call             
+     2.23%  write_to_ram  [kernel.kallsyms]  [k] __srcu_read_unlock      
+     2.10%  write_to_ram  [kernel.kallsyms]  [k] __srcu_read_lock        
+     1.81%  write_to_ram  libc-2.15.so       [.] __libc_pwrite           
+     1.70%  write_to_ram  [kernel.kallsyms]  [k] __percpu_counter_add    
+     1.69%  write_to_ram  [kernel.kallsyms]  [k] vfs_write               
+     1.53%  write_to_ram  [pmfs]             [k] pmfs_find_data_block    
+     1.26%  write_to_ram  [kernel.kallsyms]  [k] generic_write_checks    
+     0.84%  write_to_ram  [kernel.kallsyms]  [k] fget_light              
+     0.70%  write_to_ram  [pmfs]             [k] pmfs_xip_mem_protect    
+     0.64%  write_to_ram  [kernel.kallsyms]  [k] mutex_lock              
+     0.62%  write_to_ram  [kernel.kallsyms]  [k] common_file_perm        
+     0.56%  write_to_ram  [kernel.kallsyms]  [k] SyS_pwrite64            
+     0.56%  write_to_ram  [kernel.kallsyms]  [k] fsnotify                
+     0.42%  write_to_ram  [kernel.kallsyms]  [k] get_seconds             
+     0.42%  write_to_ram  [kernel.kallsyms]  [k] security_file_permission
+     0.28%  write_to_ram  [kernel.kallsyms]  [k] rw_verify_area          
+     0.14%  write_to_ram  [kernel.kallsyms]  [k] __fsnotify_parent       
+     0.14%  write_to_ram  [kernel.kallsyms]  [k] _cond_resched           
+     0.14%  write_to_ram  write_to_ram       [.] main                    
+     0.14%  write_to_ram  [kernel.kallsyms]  [k] _raw_spin_lock_irqsave  
+     0.12%  write_to_ram  [kernel.kallsyms]  [k] put_prev_task_fair      
+     0.11%  write_to_ram  [kernel.kallsyms]  [k] __d_lookup_rcu          
+     0.03%  write_to_ram  [kernel.kallsyms]  [k] apparmor_mmap_file      
+     0.00%  write_to_ram  [kernel.kallsyms]  [k] perf_event_aux_ctx      
+     0.00%  write_to_ram  [kernel.kallsyms]  [k] intel_pmu_enable_all    
+
+
+#
+# (For a higher level overview, try: perf report --sort comm,dso)
+#

@@ -20,8 +20,9 @@ def main():
 		if len(words) < 5:
 			continue
 		if words[2] == 'us' and words[4] == 'vfs_write();':
-			sum1 += float(words[1])
-			count += 1
+			if float(words[1]) < 5:
+				sum1 += float(words[1])
+				count += 1
 	print "count:", count, "latency:", sum1 / count, "us"
 
 
