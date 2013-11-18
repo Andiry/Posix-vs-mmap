@@ -7,6 +7,7 @@
 #include<fcntl.h>
 #include<time.h>
 #include<sys/mman.h>
+#include<sys/time.h>
 #include<string.h>
 #include<pthread.h>
 
@@ -107,7 +108,7 @@ static void * mmx2_memcpy(void * __restrict__ to, const void * __restrict__ from
 int main(int argc, char ** argv)
 {
 	int fd, i;
-	long long time;
+	long long time, time1;
 	unsigned long long FILE_SIZE;
 	size_t len;
 	char c = 'A';
@@ -115,6 +116,8 @@ int main(int argc, char ** argv)
 	char *origin_data;
 	char *data;
 	struct timespec start, end;
+	struct timeval begin, finish;
+	struct timezone tz;
 	void *buf1 = NULL;
 	char *buf;
 	int size, count;
@@ -124,6 +127,7 @@ int main(int argc, char ** argv)
 	char xip_enabled[20];
 	char use_nvp[20];
 	char filename[60];
+	int enable_ftrace;
 
 	if (argc < 6) {
 		printf("Usage: ./mmap_to_ram $FS $XIP $Quill $FILE_SIZE $filename\n");
@@ -182,31 +186,63 @@ int main(int argc, char ** argv)
 	buf = (char *)buf1;
 
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
-	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+//	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED, fd, 0);
 	origin_data = data;
 
-	for (size = start_size; size <= END_SIZE; size <<= 1) {
+//	for (size = start_size; size <= END_SIZE; size <<= 1) {
+	size = atoi(argv[2]);
+	enable_ftrace = atoi(argv[3]);
 		memset(buf, c, size);
 		c++;
 		data = origin_data;
-		count = FILE_SIZE / size;
 
+		count = 1073741824 / size;
+		// Warm the cache with 1GB write
+		gettimeofday(&begin, &tz);
+		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
 			mmx2_memcpy(data, buf, size);
 			data += size;
 		}
 
-		msync(origin_data, FILE_SIZE, MS_ASYNC);
+		msync(origin_data, 1073741824, MS_ASYNC);
 		clock_gettime(CLOCK_MONOTONIC, &end);
-
+		gettimeofday(&finish, &tz);
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		printf("Mmap: size %d bytes, %d times,\t %lld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time, FILE_SIZE * 1024.0 / time);
+		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
+		printf("mmap warm: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
+		printf("mmap warm cache process %lld microseconds\n", time1);
+
+		count = FILE_SIZE / size;
+		data = origin_data;
+
+		if (enable_ftrace)
+			system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
+	
+		gettimeofday(&begin, &tz);
+		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+		for (i = 0; i < count; i++) {
+			mmx2_memcpy(data, buf, size);
+			data += size;
+		}
+		msync(origin_data, FILE_SIZE, MS_ASYNC);
+		clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+		gettimeofday(&finish, &tz);
+
+		if (enable_ftrace)
+			system("echo 0 > /sys/kernel/debug/tracing/tracing_on");
+		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+		printf("mmap: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
+		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
+		printf("mmap process %lld microseconds\n", time1);
 		fprintf(output, "%s,%s,%s,%d,%lld,%d,%lld,%f\n", fs_type, use_nvp, xip_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
-	}
+//	}
 
 	fclose(output);
-	munmap(origin_data, FILE_SIZE);
+//	munmap(origin_data, FILE_SIZE);
+	munmap(origin_data, 1073741824);
 	close(fd);
 	free(buf1);
 	return 0;
