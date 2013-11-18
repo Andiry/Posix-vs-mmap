@@ -22,10 +22,12 @@ echo '' > ${TRACER_PATH}/set_graph_function
 
 #echo $FUNCTION > ${TRACER_PATH}/set_graph_function
 #echo $FUNCTION > ${TRACER_PATH}/set_ftrace_filter
-#echo 'vfs_write xip_file_write brd_direct_access' > ${TRACER_PATH}/set_ftrace_filter
-echo 'vfs_write' > ${TRACER_PATH}/set_ftrace_filter
-#echo 'ext2_get_xip_mem' > ${TRACER_PATH}/set_graph_function
-echo 'vfs_write' > ${TRACER_PATH}/set_graph_function
+echo 'xip_file_write' > ${TRACER_PATH}/set_ftrace_filter
+#echo 'vfs_write' > ${TRACER_PATH}/set_ftrace_filter
+#echo 'xip_file_write' > ${TRACER_PATH}/set_ftrace_filter
+echo 'xip_file_write' > ${TRACER_PATH}/set_graph_function
+#echo 'vfs_write' > ${TRACER_PATH}/set_graph_function
+#echo 'xip_file_write' > ${TRACER_PATH}/set_graph_function
 
 #./write_to_ram_warm Ext2 1 0 1g test.csv
 
