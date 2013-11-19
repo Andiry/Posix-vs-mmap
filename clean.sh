@@ -10,9 +10,9 @@ RD_SIZE=2097152
 echo Mount memudisk with $RD_SIZE KB...
 QUIET=/dev/null
 
-pushd /homes/jix024/trunk/Tools/KernelModules/Ramdisk >$QUIET
-sudo insmod memudisk.ko rd_nr=1 rd_size=$RD_SIZE
-popd > $QUIET
+#pushd ~/test/memudisk >$QUIET
+sudo insmod ~/test/memudisk/memudisk.ko rd_nr=1 rd_size=$RD_SIZE
+#popd > $QUIET
 sleep 1
 
 sudo chmod a+rw /dev/memuram0

@@ -47,4 +47,5 @@ def main():
 		do_work(filesize, filename)
 		time.sleep(1)
 
+	print "Test " + filename + " finished."
 main()
