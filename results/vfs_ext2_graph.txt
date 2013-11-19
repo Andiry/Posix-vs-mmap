@@ -1,0 +1,124 @@
+# tracer: function_graph 18494ns
+#
+# CPU  DURATION                  FUNCTION CALLS
+# |     |   |                     |   |   |   |
+ 6)               |  vfs_write() {
+ 6)               |    rw_verify_area() {
+ 6)               |      security_file_permission() {
+ 6)               |        apparmor_file_permission() {
+ 6)   0.054 us    |          common_file_perm();
+ 6)   0.351 us    |        }
+ 6)   0.610 us    |      }
+ 6)   0.822 us    |    }
+ 6)   0.070 us    |    __sb_start_write();
+ 6)               |    xip_file_write() {
+ 6)               |      mutex_lock() {
+ 6)   0.016 us    |        _cond_resched();
+ 6)   0.219 us    |      }
+ 6)   0.026 us    |      file_remove_suid();
+ 6)               |      file_update_time() {
+ 6)               |        current_fs_time() {
+ 6)   0.023 us    |          current_kernel_time();
+ 6)   0.213 us    |        }
+ 6)   0.413 us    |      }
+ 6)               |      ext2_get_xip_mem [ext2]() {
+ 6)               |        ext2_get_block [ext2]() {
+ 6)               |          ext2_get_blocks [ext2]() {
+ 6)   0.033 us    |            ext2_block_to_path.isra.12 [ext2]();
+ 6)   0.046 us    |            ext2_get_branch [ext2]();
+ 6)   0.546 us    |          }
+ 6)   0.751 us    |        }
+ 6)               |        brd_direct_access [memudisk]() {
+ 6)               |          brd_insert_page [memudisk]() {
+ 6)   0.318 us    |            brd_lookup_page [memudisk]();
+ 6)   0.501 us    |          }
+ 6)   0.696 us    |        }
+ 6)   1.870 us    |      }
+ 6)   0.025 us    |      mutex_unlock();
+ 6)   3.866 us    |    }
+ 6)               |    __fsnotify_parent() {
+ 6)               |      dget_parent() {
+ 6)   0.029 us    |        _raw_spin_lock();
+ 6)   0.212 us    |      }
+ 6)               |      fsnotify() {
+ 6)   0.046 us    |        __srcu_read_lock();
+ 6)               |        send_to_group() {
+ 6)   0.018 us    |          inotify_should_send_event();
+ 6)               |          fsnotify_create_event() {
+ 6)               |            kmem_cache_alloc() {
+ 6)   0.022 us    |              _cond_resched();
+ 6)   0.234 us    |            }
+ 6)               |            kstrdup() {
+ 6)               |              __kmalloc_track_caller() {
+ 6)   0.037 us    |                kmalloc_slab();
+ 6)   0.016 us    |                _cond_resched();
+ 6)   0.421 us    |              }
+ 6)   0.631 us    |            }
+ 6)               |            path_get() {
+ 6)   0.024 us    |              mntget();
+ 6)   0.023 us    |              _raw_spin_lock();
+ 6)   0.396 us    |            }
+ 6)   1.801 us    |          }
+ 6)               |          inotify_handle_event() {
+ 6)               |            kmem_cache_alloc() {
+ 6)   0.025 us    |              _cond_resched();
+ 6)   0.256 us    |            }
+ 6)   0.024 us    |            fsnotify_get_group();
+ 6)               |            fsnotify_add_notify_event() {
+ 6)               |              mutex_lock() {
+ 6)   0.019 us    |                _cond_resched();
+ 6)   0.225 us    |              }
+ 6)               |              inotify_merge() {
+ 6)   0.017 us    |                _raw_spin_lock();
+ 6)   0.024 us    |                fsnotify_get_event();
+ 6)   0.401 us    |              }
+ 6)   0.024 us    |              mutex_unlock();
+ 6)   0.021 us    |              fsnotify_destroy_event_holder();
+ 6)   1.395 us    |            }
+ 6)               |            inotify_free_event_priv() {
+ 6)   0.024 us    |              fsnotify_put_group();
+ 6)   0.032 us    |              kmem_cache_free();
+ 6)   0.399 us    |            }
+ 6)   0.027 us    |            fsnotify_put_event();
+ 6)   3.269 us    |          }
+ 6)   5.658 us    |        }
+ 6)   0.035 us    |        __srcu_read_unlock();
+ 6)               |        fsnotify_put_event() {
+ 6)               |          path_put() {
+ 6)               |            dput() {
+ 6)   0.016 us    |              _raw_spin_lock();
+ 6)   0.202 us    |            }
+ 6)               |            mntput() {
+ 6)               |              mntput_no_expire() {
+ 6)   0.035 us    |                lg_local_lock();
+ 6)   0.022 us    |                lg_local_unlock();
+ 6)   0.415 us    |              }
+ 6)   0.600 us    |            }
+ 6)   1.137 us    |          }
+ 6)   0.038 us    |          kfree();
+ 6)   0.035 us    |          put_pid();
+ 6)   0.029 us    |          kmem_cache_free();
+ 6)   1.916 us    |        }
+ 6)   8.425 us    |      }
+ 6)               |      dput() {
+ 6)   0.023 us    |        _raw_spin_lock();
+ 6)   0.195 us    |      }
+ 6)   9.358 us    |    }
+ 6)               |    fsnotify() {
+ 6)   0.035 us    |      __srcu_read_lock();
+ 6)   0.034 us    |      __srcu_read_unlock();
+ 6)   0.420 us    |    }
+ 6)   0.045 us    |    __sb_end_write();
+ 6) + 16.311 us   |  }
+ 4)               |  vfs_write() {
+ 4)               |    rw_verify_area() {
+ 4)               |      security_file_permission() {
+ 4)               |        apparmor_file_permission() {
+ 4)   0.049 us    |          common_file_perm();
+ 4)   0.295 us    |        }
+ 4)   0.516 us    |      }
+ 4)   0.737 us    |    }
+ 4)   0.058 us    |    __sb_start_write();
+ 4)               |    mutex_lock() {
+ 4)   0.018 us    |      _cond_resched();
+ 4)   0.207 us    |    }

@@ -6,7 +6,8 @@ sudo rmmod memudisk
 
 sleep 1
 
-RD_SIZE=2097152
+#RD_SIZE=2097152
+RD_SIZE=44040192
 echo Mount memudisk with $RD_SIZE KB...
 QUIET=/dev/null
 
@@ -17,6 +18,6 @@ sleep 1
 
 sudo chmod a+rw /dev/memuram0
 echo Fill the memudisk...
-dd if=/dev/zero of=/dev/memuram0 bs=1M count=2048 oflag=direct
+dd if=/dev/zero of=/dev/memuram0 bs=1M count=43008 oflag=direct
 sleep 1
 
