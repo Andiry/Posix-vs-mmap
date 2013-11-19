@@ -124,24 +124,18 @@ int main(int argc, char ** argv)
 	FILE *output;
 	char fs_type[20];
 	char file_size_num[20];
-	char xip_enabled[20];
 	char use_nvp[20];
 	char filename[60];
 	int enable_ftrace;
 
 	if (argc < 6) {
-		printf("Usage: ./mmap_to_ram $FS $XIP $Quill $FILE_SIZE $filename\n");
+		printf("Usage: ./mmap_to_ram $FS $Quill $FTRACE $FILE_SIZE $filename\n");
 		return 0;
 	}
 
 	strcpy(fs_type, argv[1]);
 
 	if (!strcmp(argv[2], "0"))
-		strcpy(xip_enabled, "No_XIP");
-	else
-		strcpy(xip_enabled, "XIP");
-
-	if (!strcmp(argv[3], "0"))
 		strcpy(use_nvp, "Posix-mmap");
 	else
 		strcpy(use_nvp, "Quill-mmap");
@@ -190,9 +184,10 @@ int main(int argc, char ** argv)
 	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED, fd, 0);
 	origin_data = data;
 
-//	for (size = start_size; size <= END_SIZE; size <<= 1) {
-	size = atoi(argv[2]);
 	enable_ftrace = atoi(argv[3]);
+	for (size = start_size; size <= END_SIZE; size <<= 1) {
+//		size = atoi(argv[2]);
+//		enable_ftrace = atoi(argv[3]);
 		memset(buf, c, size);
 		c++;
 		data = origin_data;
@@ -237,8 +232,9 @@ int main(int argc, char ** argv)
 		printf("mmap: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
 		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
 		printf("mmap process %lld microseconds\n", time1);
-		fprintf(output, "%s,%s,%s,%d,%lld,%d,%lld,%f\n", fs_type, use_nvp, xip_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
-//	}
+//		fprintf(output, "%s,%s,%d,%lld,%d,%lld,%f\n", fs_type, use_nvp, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
+		fprintf(output, "%s,%s,%d,%lld,%lld,%lld,%f,%lld\n", fs_type, use_nvp, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time, time / count);
+	}
 
 	fclose(output);
 //	munmap(origin_data, FILE_SIZE);

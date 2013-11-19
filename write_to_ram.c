@@ -31,25 +31,19 @@ int main(int argc, char **argv)
 	char *buf;
 	FILE *output;
 	char fs_type[20];
-	char xip_enabled[20];
 	char quill_enabled[20];
 	char file_size_num[20];
 	char filename[60];
 	int enable_ftrace;
 
 	if (argc < 6) {
-		printf("Usage: ./write_to_ram $FS $XIP $Quill $FILE_SIZE $filename\n");
+		printf("Usage: ./write_to_ram $FS $QUILL $ENABLE_FTRACE $FILE_SIZE $filename\n");
 		return 0;
 	}
 
 	strcpy(fs_type, argv[1]);
 
 	if (!strcmp(argv[2], "0"))
-		strcpy(xip_enabled, "No_XIP");
-	else
-		strcpy(xip_enabled, "XIP");
-
-	if (!strcmp(argv[3], "0"))
 		strcpy(quill_enabled, "Posix");
 	else
 		strcpy(quill_enabled, "Quill");
@@ -96,10 +90,11 @@ int main(int argc, char **argv)
 //	fd = open("/dev/null", O_WRONLY, 0640); 
 //	fd = open("/dev/zero", O_RDONLY, 0640); 
 	printf("fd: %d\n", fd);
-//	for (size = start_size; size <= END_SIZE; size <<= 1) {
-//	size = 8192;
-	size = atoi(argv[2]);
+//	start_size = atoi(argv[2]);
 	enable_ftrace = atoi(argv[3]);
+	for (size = start_size; size <= END_SIZE; size <<= 1) {
+//		size = 8192;
+//		size = atoi(argv[2]);
 		memset(buf, c, size);
 		c++;
 		lseek(fd, 0, SEEK_SET);
@@ -145,8 +140,8 @@ int main(int argc, char **argv)
 		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
 		printf("Write: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
 		printf("Write process %lld microseconds\n", time1);
-		fprintf(output, "%s,%s,%s,%d,%lld,%lld,%lld,%f\n", fs_type, quill_enabled, xip_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
-//	}
+		fprintf(output, "%s,%s,%d,%lld,%lld,%lld,%f,%lld\n", fs_type, quill_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time, time / count);
+	}
 
 	fclose(output);
 	close(fd);
