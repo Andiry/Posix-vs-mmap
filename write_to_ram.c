@@ -103,13 +103,13 @@ int main(int argc, char **argv)
 		count = 1073741824 / size;
 		// Warm the cache with 1GB write
 		gettimeofday(&begin, &tz);
-		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
 			if (pwrite(fd, buf, size, offset) != size)
 				printf("ERROR!\n");
 			offset += size;
 		}
-		clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+		clock_gettime(CLOCK_MONOTONIC, &end);
 		gettimeofday(&finish, &tz);
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
@@ -124,14 +124,14 @@ int main(int argc, char **argv)
 			system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
 	
 		gettimeofday(&begin, &tz);
-		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
 			pwrite(fd, buf, size, offset);
 //			if (pwrite(fd, buf, size, offset) != size)
 //				printf("ERROR!\n");
 			offset += size;
 		}
-		clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+		clock_gettime(CLOCK_MONOTONIC, &end);
 		gettimeofday(&finish, &tz);
 
 		if (enable_ftrace)

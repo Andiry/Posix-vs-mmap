@@ -195,7 +195,7 @@ int main(int argc, char ** argv)
 		count = 1073741824 / size;
 		// Warm the cache with 1GB write
 		gettimeofday(&begin, &tz);
-		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+//		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
 			mmx2_memcpy(data, buf, size);
@@ -217,13 +217,13 @@ int main(int argc, char ** argv)
 			system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
 	
 		gettimeofday(&begin, &tz);
-		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
 			mmx2_memcpy(data, buf, size);
 			data += size;
 		}
 		msync(origin_data, FILE_SIZE, MS_ASYNC);
-		clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+		clock_gettime(CLOCK_MONOTONIC, &end);
 		gettimeofday(&finish, &tz);
 
 		if (enable_ftrace)
