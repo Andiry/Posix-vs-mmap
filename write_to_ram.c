@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 		c++;
 		lseek(fd, 0, SEEK_SET);
 		offset = 0;
-
+#if 0
 		count = 1073741824 / size;
 		// Warm the cache with 1GB write
 		gettimeofday(&begin, &tz);
@@ -116,10 +116,10 @@ int main(int argc, char **argv)
 		printf("Write warm: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
 		printf("Warm cache process %lld microseconds\n", time1);
 
+#endif
 		lseek(fd, 0, SEEK_SET);
 		count = FILE_SIZE / size;
 		offset = 0;
-
 		if (enable_ftrace)
 			system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
 	
