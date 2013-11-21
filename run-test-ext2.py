@@ -22,6 +22,7 @@ def do_work(filesize, filename):
 def main():
 	date = time.strftime("%Y-%m-%d_%X", time.localtime(time.time()))
 	filename = "./results/results_ext2_" + date + ".csv"
+	filename = filename.replace(':', '-')
 	print filename
 	f = open(filename, 'w')
 	f.write("FS,Type,request_size,file_size,count,time (ns),Bandwidth (GB/s),Latency (ns)\n")

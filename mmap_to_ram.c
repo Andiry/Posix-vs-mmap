@@ -191,7 +191,7 @@ int main(int argc, char ** argv)
 		memset(buf, c, size);
 		c++;
 		data = origin_data;
-
+#if 0
 		count = 1073741824 / size;
 		// Warm the cache with 1GB write
 		gettimeofday(&begin, &tz);
@@ -209,7 +209,7 @@ int main(int argc, char ** argv)
 		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
 		printf("mmap warm: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
 		printf("mmap warm cache process %lld microseconds\n", time1);
-
+#endif
 		count = FILE_SIZE / size;
 		data = origin_data;
 
