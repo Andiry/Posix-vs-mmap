@@ -92,6 +92,7 @@ int main(int argc, char **argv)
 //	fd = open("/dev/null", O_WRONLY, 0640); 
 //	fd = open("/dev/zero", O_RDONLY, 0640); 
 	printf("fd: %d\n", fd);
+	sleep(10);
 //	start_size = atoi(argv[2]);
 //	enable_ftrace = atoi(argv[3]);
 //	for (size = start_size; size <= END_SIZE; size <<= 1) {
