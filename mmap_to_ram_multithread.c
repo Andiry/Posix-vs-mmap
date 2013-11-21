@@ -16,6 +16,7 @@ const int start_size = 512;
 
 void* mmap_transfer(void *arg)
 {
+#if 0
 	int id = (int)((*(int *)arg) & 0xff);
 	int size = (int)((*(int *)arg) >> 8);
 	int offset = id * SIZE / num_threads;
@@ -30,6 +31,8 @@ void* mmap_transfer(void *arg)
 		start_data += size;
 		start_buf += size;
 	}
+#endif
+	return NULL;
 }
 
 int main(int argc, char ** argv)
@@ -38,7 +41,7 @@ int main(int argc, char ** argv)
 	long long time;
 	unsigned long long FILE_SIZE;
 	size_t len;
-	char unit
+	char unit;
 	char c = 'A';
 	char *origin_data;
 	char *data;
@@ -55,6 +58,7 @@ int main(int argc, char ** argv)
 	char xip_enabled[20];
 	char use_nvp[20];
 	char filename[60];
+	int num_threads;
 
 	if (argc < 2)
 		num_threads = 1;
@@ -64,17 +68,17 @@ int main(int argc, char ** argv)
 	pid = (pthread_t *)malloc(sizeof(pthread_t) * num_threads); // pthread id array
 	pdata = (int *)malloc(sizeof(int) * num_threads); // pthread data array
 
-	posix_memalign(&buf1, SIZE, SIZE);
+//	posix_memalign(&buf1, SIZE, SIZE);
 
 	buf = (char *)buf1;
 
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR); 
-	data = (char *)mmap(NULL, SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
+	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
 	origin_data = data;
 
-	for (size = start_size; size <= SIZE / num_threads; size <<= 1) {
+	for (size = start_size; size <= FILE_SIZE / num_threads; size <<= 1) {
 		buf = (char *)buf1;
-		memset(buf, c, SIZE);
+		memset(buf, c, FILE_SIZE);
 		c++;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
@@ -88,14 +92,14 @@ int main(int argc, char ** argv)
 		for (i = 0; i < num_threads; i++)
 			pthread_join(pid[i], &thread_ret);
 
-		msync(origin_data, SIZE, MS_ASYNC);
+		msync(origin_data, FILE_SIZE, MS_ASYNC);
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		printf("Mmap: size %d bytes, %d threads,\t %ld nanoseconds,\t Bandwidth %f MB/s.\n", size, num_threads, time, 4.0 * 1e9 / time);
 	}
 
-	munmap(origin_data, SIZE);
+	munmap(origin_data, FILE_SIZE);
 	close(fd);
 	free(buf1);
 	free(pid);
