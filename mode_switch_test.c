@@ -23,11 +23,11 @@ int main(int argc, char **argv)
 	int size;
 	unsigned long long count;
 
-	clock_gettime(CLOCK_MONOTONIC_RAW, &begin);
+	clock_gettime(CLOCK_MONOTONIC, &begin);
 	for (i = 0; i < 1000000; i++) {
 		getuid();
 	}
-	clock_gettime(CLOCK_MONOTONIC_RAW, &finish);
+	clock_gettime(CLOCK_MONOTONIC, &finish);
 
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
 	printf("getuid %lld ns, average %lld ns\n", time1, time1 / 1000000);
