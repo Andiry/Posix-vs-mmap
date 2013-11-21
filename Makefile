@@ -1,7 +1,17 @@
-all: write_to_ram mmap_to_ram write_to_ram_warm
+CC = gcc
+CFLAGS = -O3
+CLIB = -lrt
+
+SRCS = $(wildcard *.c)
+BUILD = $(patsubst %.c, %, $(SRCS))
+
+all: $(BUILD)
+
+.c:
+	$(CC) $(CFLAGS) $< -o $@ $(CLIB)
 
 clean:
-	rm -rf write_to_ram *.o mmap_to_ram write_to_ram_warm
+	rm -rf write_to_ram *.o mmap_to_ram write_to_ram_warm nvp-test
 
 write_to_ram: write_to_ram.c
 	gcc -O3 write_to_ram.c -o write_to_ram -lrt
