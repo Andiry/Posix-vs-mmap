@@ -8,14 +8,14 @@ import sys
 def do_work(filesize, filename):
 	i = 0
 	while i < 10:
-		os.system('./mmap_to_ram %s %s %s %s %s' %('Ext2', '0', '0', filesize, filename))
-		os.system('./write_to_ram %s %s %s %s %s' %('Ext2', '0', '0', filesize, filename))
+		os.system('./mmap_to_ram %s %s %s %s %s' %('Ext2', 'Posix-mmap', '0', filesize, filename))
+		os.system('./write_to_ram %s %s %s %s %s' %('Ext2', 'Posix', '0', filesize, filename))
 #		print XIP + '0' + filename
 		i += 1
 	i = 0
 	while i < 10:
-		os.system('./run_nvp ./mmap_to_ram %s %s %s %s %s' %('Ext2', '1', '0', filesize, filename))
-		os.system('./run_nvp ./write_to_ram %s %s %s %s %s' %('Ext2', '1', '0', filesize, filename))
+		os.system('./run_nvp ./mmap_to_ram %s %s %s %s %s' %('Ext2', 'Quill-mmap', '0', filesize, filename))
+		os.system('./run_nvp ./write_to_ram %s %s %s %s %s' %('Ext2', 'Quill', '0', filesize, filename))
 #		print XIP + '1' + filename
 		i += 1
 

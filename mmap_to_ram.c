@@ -129,16 +129,12 @@ int main(int argc, char ** argv)
 	int enable_ftrace;
 
 	if (argc < 6) {
-		printf("Usage: ./mmap_to_ram $FS $Quill $FTRACE $FILE_SIZE $filename\n");
+		printf("Usage: ./mmap_to_ram $FS $SCNEARIO $FTRACE $FILE_SIZE $filename\n");
 		return 0;
 	}
 
 	strcpy(fs_type, argv[1]);
-
-	if (!strcmp(argv[2], "0"))
-		strcpy(use_nvp, "Posix-mmap");
-	else
-		strcpy(use_nvp, "Quill-mmap");
+	strcpy(use_nvp, argv[2]);
 
 	strcpy(file_size_num, argv[4]);
 	len = strlen(file_size_num);

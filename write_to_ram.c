@@ -37,16 +37,12 @@ int main(int argc, char **argv)
 	int enable_ftrace;
 
 	if (argc < 6) {
-		printf("Usage: ./write_to_ram $FS $QUILL $ENABLE_FTRACE $FILE_SIZE $filename\n");
+		printf("Usage: ./write_to_ram $FS $SCNEARIO $ENABLE_FTRACE $FILE_SIZE $filename\n");
 		return 0;
 	}
 
 	strcpy(fs_type, argv[1]);
-
-	if (!strcmp(argv[2], "0"))
-		strcpy(quill_enabled, "Posix");
-	else
-		strcpy(quill_enabled, "Quill");
+	strcpy(quill_enabled, argv[2]);
 
 	strcpy(file_size_num, argv[4]);
 	len = strlen(file_size_num);
