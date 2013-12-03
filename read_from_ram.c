@@ -121,9 +121,9 @@ int main(int argc, char **argv)
 		gettimeofday(&begin, &tz);
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
-//			write(fd, buf, size);
+//			read(fd, buf, size);
 			pread(fd, buf, size, offset);
-//			if (pwrite(fd, buf, size, offset) != size)
+//			if (pread(fd, buf, size, offset) != size)
 //				printf("ERROR!\n");
 			offset += size;
 		}
@@ -134,8 +134,8 @@ int main(int argc, char **argv)
 			system("echo 0 > /sys/kernel/debug/tracing/tracing_on");
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
-		printf("Write: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
-		printf("Write process %lld microseconds\n", time1);
+		printf("Read: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
+		printf("Read process %lld microseconds\n", time1);
 		fprintf(output, "%s,%s,%d,%lld,%lld,%lld,%f,%lld\n", fs_type, quill_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time, time / count);
 	}
 
