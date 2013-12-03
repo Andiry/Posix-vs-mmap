@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 	char *buf;
 	FILE *output;
 	char fs_type[20];
-	char quill_enabled[20];
+	char quill_enabled[40];
 	char file_size_num[20];
 	char filename[60];
 	int enable_ftrace;
@@ -121,11 +121,11 @@ int main(int argc, char **argv)
 		gettimeofday(&begin, &tz);
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
-//			read(fd, buf, size);
-			pread(fd, buf, size, offset);
+			read(fd, buf, size);
+//			pread(fd, buf, size, offset);
 //			if (pread(fd, buf, size, offset) != size)
 //				printf("ERROR!\n");
-			offset += size;
+//			offset += size;
 		}
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		gettimeofday(&finish, &tz);
