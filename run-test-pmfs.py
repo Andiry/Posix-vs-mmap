@@ -8,13 +8,18 @@ import sys
 def do_work(filesize, filename):
 	i = 0
 	while i < 10:
-		os.system('./write_to_ram %s %s %s %s %s' %('PMFS', 'Posix', '0', filesize, filename))
-		os.system('./mmap_to_ram %s %s %s %s %s' %('PMFS', 'Posix-mmap', '0', filesize, filename))
+		os.system('./write_to_ram %s %s %s %s %s' %('PMFS', 'Posix-write', '0', filesize, filename))
+#		os.system('./mmap_to_ram %s %s %s %s %s' %('PMFS', 'Posix-mmap', '0', filesize, filename))
 		i += 1
 	i = 0
 	while i < 10:
-		os.system('./run_nvp ./write_to_ram %s %s %s %s %s' %('PMFS', 'Quill', '0', filesize, filename))
-		os.system('./run_nvp ./mmap_to_ram %s %s %s %s %s' %('PMFS', 'Quill-mmap', '0', filesize, filename))
+#		os.system('./run_nvp ./write_to_ram %s %s %s %s %s' %('PMFS', 'Quill', '0', filesize, filename))
+#		os.system('./run_nvp ./mmap_to_ram %s %s %s %s %s' %('PMFS', 'Quill-mmap', '0', filesize, filename))
+		i += 1
+	i = 0
+	while i < 10:
+		os.system('./read_from_ram %s %s %s %s %s' %('PMFS', 'Posix-read', '0', filesize, filename))
+#		os.system('./mmap_to_ram %s %s %s %s %s' %('PMFS', 'Posix-mmap', '0', filesize, filename))
 		i += 1
 
 def main():

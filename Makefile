@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O3
-CLIB = -lrt
+CLIB = -lrt -lpthread
 
 SRCS = $(wildcard *.c)
 BUILD = $(patsubst %.c, %, $(SRCS))
