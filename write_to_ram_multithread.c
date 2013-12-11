@@ -14,7 +14,7 @@ const int start_size = 512;
 
 int main(int argc, char **argv)
 {
-	int fd, i;
+	int fd, i, num_threads;
 	long long time;
 	unsigned long long FILE_SIZE;
 	size_t len;
@@ -27,27 +27,21 @@ int main(int argc, char **argv)
 	char *buf;
 	FILE *output;
 	char fs_type[20];
-	char xip_enabled[20];
-	char quill_enabled[20];
+	char quill_enabled[40];
 	char file_size_num[20];
 	char filename[60];
 
 	if (argc < 6) {
-		printf("Usage: ./write_to_ram $FS $XIP $Quill $FILE_SIZE $filename\n");
+		printf("Usage: ./write_to_ram_multithread $FS $SCNEARIO $num_threads $FILE_SIZE $filename\n");
 		return 0;
 	}
 
 	strcpy(fs_type, argv[1]);
+	strcpy(quill_enabled, argv[2]);
 
-	if (!strcmp(argv[2], "0"))
-		strcpy(xip_enabled, "No_XIP");
-	else
-		strcpy(xip_enabled, "XIP");
-
-	if (!strcmp(argv[3], "0"))
-		strcpy(quill_enabled, "Posix");
-	else
-		strcpy(quill_enabled, "Quill");
+	num_threads = atoi(argv[3]);
+	if (num_threads <= 0 || num_threads > 16)
+		num_threads = 1;
 
 	strcpy(file_size_num, argv[4]);
 	len = strlen(file_size_num);
@@ -81,7 +75,7 @@ int main(int argc, char **argv)
 	strcpy(filename, argv[5]);
 	output = fopen(filename, "a");
 
-	if (posix_memalign(&buf1, END_SIZE, END_SIZE)) { // up to 64MB
+	if (posix_memalign(&buf1, END_SIZE * num_threads, END_SIZE)) { // up to 64MB
 		printf("ERROR - POSIX NOMEM!\n");
 		return 0;
 	}
@@ -103,7 +97,7 @@ int main(int argc, char **argv)
 
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		printf("Write: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t Bandwidth %f MB/s.\n", size, count, time, FILE_SIZE * 1024.0 / time);
-		fprintf(output, "%s,%s,%s,%d,%lld,%lld,%lld,%f\n", fs_type, quill_enabled, xip_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
+		fprintf(output, "%s,%s,%d,%d,%lld,%lld,%lld,%f\n", fs_type, quill_enabled, num_threads, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
 	}
 
 	fclose(output);
