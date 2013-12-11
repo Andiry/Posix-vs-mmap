@@ -5,10 +5,13 @@ CLIB = -lrt -lpthread
 SRCS = $(wildcard *.c)
 BUILD = $(patsubst %.c, %, $(SRCS))
 
-all: $(BUILD)
+all: $(BUILD) multithread
 
 .c:
 	$(CC) $(CFLAGS) $< -o $@ $(CLIB)
+
+multithread: multithread.o
+	g++ $(CFLAGS) $^ -o $@ $(CLIB)
 
 clean:
 	rm -rf write_to_ram *.o mmap_to_ram write_to_ram_warm nvp-test

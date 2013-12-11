@@ -16,14 +16,13 @@
 #include <limits.h>
 #include <sstream>
 #include <fstream>
-#include"FastRand.hpp"
-#include"NVTMWorkloadHarness.hpp"
+#include "Util/FastRand.hpp"
+#include "Util/NVTMWorkloadHarness.hpp"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "btree.hpp"
 
 using namespace std;
 
@@ -41,7 +40,7 @@ size_t workload_size = 1UL * 1024 * 1024 * 1024;
 
 char **buf;
 
-void ParseOptions(int argv, char **argv);
+void ParseOptions(int argc, char **argv);
 
 struct thread_data {
 	struct request *request;
@@ -55,7 +54,7 @@ void PopulateThreadData(unsigned long long op_count, struct thread_data *td)
 	unsigned long long total_writes = (unsigned long long) (op_count *1.0 *(1 - (float) 1.0 * rw_ratio/100) );
 	cout << " Op count " << op_count << " Total Reads " << total_reads << " Total Writes " << total_writes << endl;
 
-//    uint64_t seed = rand();
+//	uint64_t seed = rand();
 	for(int j = 0; j < num_threads; j++){
 		unsigned long long reads = total_reads / num_threads;
 		unsigned long long writes = total_writes / num_threads; // each thread has a predefined set of unique request
@@ -84,18 +83,20 @@ void PopulateThreadData(unsigned long long op_count, struct thread_data *td)
 }
 
 
-void FileOps(int id, void *arg, uint64_t & seed)
+void FileOps(int id, void *arg, uint64_t &seed)
 {
         struct thread_data *tds =(struct thread_data*) arg;
         struct thread_data *td = &(tds[id]);
         int fd = file_descriptors[id % file_count];
+	int ret;
 
         if(td->request[td->index % td->num_request].rnw)
         {
-                pread(fd, buf[id], req_size, td->request[td->index % td->num_request].offset*req_size); 
+		ret = pread(fd, buf[id], req_size, td->request[td->index % td->num_request].offset);
         }else{
-                pwrite(fd, buf[id], req_size, td->request[td->index %td->num_request].offset*req_size);
-        }               
+		ret = pwrite(fd, buf[id], req_size, td->request[td->index %td->num_request].offset);
+        }
+	assert(ret == req_size);
         td->index++;
 }
 
@@ -119,7 +120,6 @@ int main (int argc, char *argv[]) {
 	DUMP(req_size);
 	DUMP(file_count);
 	DUMP(workload_size);
-	DUMP(cache_size); 
 	DUMP(rw_ratio);
 	if(rw_ratio == 0)
 		cout << "Operation=write\n";
@@ -146,7 +146,7 @@ int main (int argc, char *argv[]) {
 			fd = open(name.str().c_str(), O_RDWR|O_DIRECT, 0666);
 		}
           
-		assert(fd >= 0 );
+		assert(fd >= 0);
 		file_descriptors[i] = fd;
 	}
 
@@ -162,7 +162,7 @@ int main (int argc, char *argv[]) {
 	stm::NVTMWorkloadHarness::SetOperationCount(op_count);  
 	std::cout << "Setting up thread data " << "\n";
 	PopulateThreadData(op_count, td);       
-	std::cout << "Setup of thread data complete op_count " << op_count << "\n";
+	std::cout << "Setup of thread data complete op_count " << stm::NVTMWorkloadHarness::GetOperationCount() << "\n";
 	// Removed all that boilerplate crap.  Now you just need the Op() function.
 
 	for( int j = 0; j < num_threads; j++)
@@ -171,14 +171,12 @@ int main (int argc, char *argv[]) {
 	stm::NVTMWorkloadHarness::StartTiming();
 	stm::NVTMWorkloadHarness::RunOps(FileOps, td, num_threads);
 
-	stm::NVTMWorkloadHarness::SuspendTiming();
-	for( int j = 0; j < num_threads; j++) {
-		free(buf[i]);
-		free(td[j].request);
-	}
-
 	stm::NVTMWorkloadHarness::StopTiming();
 	stm::NVTMWorkloadHarness::PrintResults();
+	for( int j = 0; j < num_threads; j++) {
+		free(buf[j]);
+		free(td[j].request);
+	}
 	free(buf);
 	free(td);
 	return 0;
@@ -186,44 +184,25 @@ int main (int argc, char *argv[]) {
 
 void ParseOptions(int argc, char *argv[])
 {
-     char c;     
+	char c;     
 
-     // if it takes an argument you put a ':' after it.  Otherwise, no arg.
-     while ((c = getopt(argc, argv, "r:s:F:R:W:C:B:T:")) != -1) {
-          switch (c) {
-          case 'r':
-               rw_ratio = atoi(optarg);
-               if( (rw_ratio < 0) || (rw_ratio > 100) ) { fprintf(stderr, "Illegal ratio: %i\n", rw_ratio); exit(EXIT_FAILURE); }
-               break;
-          case 's':
-               req_size = atoll(optarg);
-               if(req_size < 0) { fprintf(stderr, "Illegal request size: %li\n", req_size); exit(EXIT_FAILURE); }
-               break;
-          case 'F':
-               file_count = atoi(optarg);
-               break;
-          case 'R':
-               read_hit_ratio = atoi(optarg);
-               if( (read_hit_ratio < 0) || (read_hit_ratio > 100) ) { fprintf(stderr, "Illegal ratio: %i\n", read_hit_ratio); exit(EXIT_FAILURE); }
-               break;
-          case 'W':
-               write_hit_ratio = atoi(optarg);
-               if( (write_hit_ratio < 0) || (write_hit_ratio > 100) ) { fprintf(stderr, "Illegal ratio: %i\n", read_hit_ratio); exit(EXIT_FAILURE); }
-               break;
-          case 'C':
-               cache_size = (uint64_t) atoi(optarg) * 1024 * 1024; 
-               if(cache_size == 0) exit(EXIT_FAILURE);
-               break;
-          case 'B':
-               backing_store_size = (uint64_t) atoi(optarg) * 1024 * 2; //
-               break;
-          case 'T':
-               cache_type = (CACHE_TYPE) atoi(optarg);
-               break;
-          default:
-
-               std::cerr << "Usage: " << argv[0]  << " " << stm::NVTMWorkloadHarness::GetStandardOptionsUsage() << " -r <read ratio 0-100> -s <req size in bytes> -F <File count>\n";
-               exit(EXIT_FAILURE);
-          }
-     }
+	// if it takes an argument you put a ':' after it.  Otherwise, no arg.
+	while ((c = getopt(argc, argv, "r:s:F:R:W:C:B:T:")) != -1) {
+		switch (c) {
+		case 'r':
+			rw_ratio = atoi(optarg);
+			if( (rw_ratio < 0) || (rw_ratio > 100) ) { fprintf(stderr, "Illegal ratio: %i\n", rw_ratio); exit(EXIT_FAILURE); }
+			break;
+		case 's':
+			req_size = atoll(optarg);
+			if(req_size < 0) { fprintf(stderr, "Illegal request size: %li\n", req_size); exit(EXIT_FAILURE); }
+			break;
+		case 'F':
+			file_count = atoi(optarg);
+			break;
+		default:
+			std::cerr << "Usage: " << argv[0]  << " " << stm::NVTMWorkloadHarness::GetStandardOptionsUsage() << " -r <read ratio 0-100> -s <req size in bytes> -F <File count>\n";
+			exit(EXIT_FAILURE);
+		}
+	}
 }
