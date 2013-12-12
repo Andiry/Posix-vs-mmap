@@ -93,6 +93,7 @@ void FileOps(int id, void *arg, uint64_t &seed)
         if(td->request[td->index % td->num_request].rnw)
         {
 		ret = pread(fd, buf[id], req_size, td->request[td->index % td->num_request].offset);
+	//	ret = read(fd, buf[id], req_size);
         }else{
 		ret = pwrite(fd, buf[id], req_size, td->request[td->index %td->num_request].offset);
         }
