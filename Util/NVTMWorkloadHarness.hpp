@@ -180,13 +180,14 @@ namespace stm {
 	       if (_stopTime == 0) {
 		    StopTiming();
 	       }
-	       out << "Sys\tName\tRunTime\tOperations\tThreads\topsPerSec\n";
+	       out << "Sys\tName\tRunTime\tOperations\tThreads\topsPerSec\tBandwidth\n";
 	       out <<     _system 
 		   << "\t" << _name 
 		   << "\t" << _stopTime - _startTime 
 		   << "\t" << _operationsCompleted 
 		   << "\t" << _threadCount 
 		   << "\t" << (static_cast<float>(_operationsCompleted)/(_stopTime - _startTime))
+		   << "\t" << (static_cast<float>(GetFootPrintMB())/(_stopTime - _startTime))
 		   << "\n";
 	  }
 

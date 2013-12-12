@@ -158,6 +158,16 @@ int main (int argc, char *argv[]) {
 		}
 	}
 
+	//Warm up
+	int count = workload_size / (req_size * num_threads);
+	for (int i = 0; i < num_threads; i++) {
+		unsigned long long offset = 0; 
+		for (int j = 0; j < count; j++) { 
+			pread(fd, buf[i], req_size, offset);
+			offset += req_size;
+		}
+	}
+
 	unsigned long long op_count = workload_size / req_size;
 	stm::NVTMWorkloadHarness::SetOperationCount(op_count);  
 	std::cout << "Setting up thread data " << "\n";
