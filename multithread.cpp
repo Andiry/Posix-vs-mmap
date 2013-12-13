@@ -154,7 +154,7 @@ int main (int argc, char *argv[]) {
 	buf = (char**) calloc(num_threads, sizeof(char*));
 	struct thread_data *td = (struct thread_data*) calloc(num_threads, sizeof(struct thread_data));
 	for (int i = 0; i < num_threads; i++) { 
-		if (posix_memalign((void**)(buf+i), 512, req_size) != 0) {
+		if (posix_memalign((void**)(buf + i), 512, req_size) != 0) {
 			assert(0);
 		}
 	}
@@ -164,7 +164,7 @@ int main (int argc, char *argv[]) {
 	for (int i = 0; i < num_threads; i++) {
 		unsigned long long offset = 0; 
 		for (int j = 0; j < count; j++) { 
-			pread(fd, buf[i], req_size, offset);
+			pwrite(fd, buf[i], req_size, offset);
 			offset += req_size;
 		}
 	}
@@ -180,6 +180,7 @@ int main (int argc, char *argv[]) {
 		td[j].index = 0;
 
 	stm::NVTMWorkloadHarness::StartTiming();
+//	for (int i = 0; i < 4; i++)
 	stm::NVTMWorkloadHarness::RunOps(FileOps, td, num_threads);
 
 	stm::NVTMWorkloadHarness::StopTiming();
