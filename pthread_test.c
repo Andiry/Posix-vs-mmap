@@ -185,7 +185,7 @@ int main(int argc, char **argv)
 		offset = 0; 
 		for (j = 0; j < count; j++) { 
 //			pwrite(fd, buf[i], size, offset);
-			fops(fd, buf[i], size);
+			fops(fd, buf[i], size, offset);
 			offset += size;
 		}
 	}
