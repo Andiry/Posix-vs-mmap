@@ -78,8 +78,14 @@ void pthread_transfer(void *arg)
 		count = FILE_SIZE / (num_threads * size);
 		for (i = 0; i < count; i++) { 
 //			fops(fd, buf[pid], size, offset);
-			if (fops(fd, buf[pid], size, offset) != size)
-				printf("ERROR! %d %d\n", fd, size);
+			if (fops == read || fops == write) {
+				lseek(fd, offset, SEEK_SET);
+				if (fops(fd, buf[pid], size) != size)
+					printf("ERROR! %d %d\n", fd, size);
+			} else {
+				if (fops(fd, buf[pid], size, offset) != size)
+					printf("ERROR! %d %d\n", fd, size);
+			}
 			offset += size;
 		}
 
