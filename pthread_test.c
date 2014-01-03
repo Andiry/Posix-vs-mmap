@@ -16,7 +16,7 @@ const int start_size = 512;
 unsigned long long FILE_SIZE;
 char **buf;
 int num_threads;
-int fd;
+int *fd;
 
 ssize_t read(int, void *, size_t);
 ssize_t write(int, void *, size_t);
@@ -75,16 +75,17 @@ void pthread_transfer(void *arg)
 			;
 
 		offset = start_offset;
+		if (fops == read || fops == write)
+			lseek(fd[pid], offset, SEEK_SET);
 		count = FILE_SIZE / (num_threads * size);
 		for (i = 0; i < count; i++) { 
 //			fops(fd, buf[pid], size, offset);
 			if (fops == read || fops == write) {
-				lseek(fd, offset, SEEK_SET);
-				if (fops(fd, buf[pid], size) != size)
-					printf("ERROR! %d %d\n", fd, size);
+				if (fops(fd[pid], buf[pid], size) != size)
+					printf("ERROR! %d %d\n", fd[pid], size);
 			} else {
-				if (fops(fd, buf[pid], size, offset) != size)
-					printf("ERROR! %d %d\n", fd, size);
+				if (fops(fd[pid], buf[pid], size, offset) != size)
+					printf("ERROR! %d %d\n", fd[pid], size);
 			}
 			offset += size;
 		}
@@ -181,17 +182,28 @@ int main(int argc, char **argv)
 		}
 	}
 
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
+	printf("# fds: ");
+	fd = malloc(num_threads * sizeof(int));
+	for (i = 0; i < num_threads; i++) {
+		fd[i] = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
+		printf("%d ", fd[i]);
+	}
+	printf("\n");
 
 	//Warm up
 	printf("warm up...\n");
 	size = 4096;
 	count = FILE_SIZE / (size * num_threads);
 	for (i = 0; i < num_threads; i++) {
-		offset = 0; 
+		offset = FILE_SIZE / num_threads * i;
+		if (fops == read || fops == write)
+			lseek(fd[i], offset, SEEK_SET);
 		for (j = 0; j < count; j++) { 
 //			pwrite(fd, buf[i], size, offset);
-			fops(fd, buf[i], size, offset);
+			if (fops == read || fops == write)
+				fops(fd[i], buf[i], size);
+			else
+				fops(fd[i], buf[i], size, offset);
 			offset += size;
 		}
 	}
@@ -207,7 +219,8 @@ int main(int argc, char **argv)
 		for (i = 0; i < num_threads; i++)
 			memset(buf[i], c, size);
 		c++;
-		lseek(fd, 0, SEEK_SET);
+		for (i = 0; i < num_threads; i++)
+			lseek(fd[i], 0, SEEK_SET);
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		start_all_pthreads();
@@ -222,12 +235,13 @@ int main(int argc, char **argv)
 	}
 
 	fclose(output);
-	close(fd);
 	for (i = 0; i < num_threads; i++) {
 		pthread_join(pthreads[i], NULL);
 		free(buf[i]);
+		close(fd[i]);
 	}
 	free(buf);
+	free(fd);
 	free(pthreads);
 	return 0;
 }
