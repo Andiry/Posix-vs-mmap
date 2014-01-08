@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 	unsigned long long offset;
 
 	if (argc < 7) {
-		printf("Usage: ./write_to_ram_multithread $FS $QUILL $fops $num_threads $FILE_SIZE $filename\n");
+		printf("Usage: ./pthread_test $FS $QUILL $fops $num_threads $FILE_SIZE $filename\n");
 		return 0;
 	}
 
