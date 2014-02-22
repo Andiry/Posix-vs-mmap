@@ -1,0 +1,11 @@
+[mytest]
+filename=/root/test/test1
+direct=1
+iodepth=1
+thread
+rw=write
+ioengine=psync
+bs=4k 
+size=64m
+numjobs=1
+runtime=1000
