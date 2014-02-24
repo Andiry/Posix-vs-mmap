@@ -12,4 +12,4 @@ sudo chmod a+rw /mnt/ramdisk
 echo "Mount to /mnt/ramdisk."
 
 cp test1 /mnt/ramdisk/
-dd if=/dev/zero of=/mnt/ramdisk/test1 bs=1M count=1024 oflag=direct
+#dd if=/dev/zero of=/mnt/ramdisk/test1 bs=1M count=1024 oflag=direct
