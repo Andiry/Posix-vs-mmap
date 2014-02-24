@@ -1,0 +1,11 @@
+#!/bin/bash
+
+sync
+#sudo /x/SC2010/scripts/flush_cache
+#export LD_LIBRARY_PATH=${BEE3HOME}/Tools/PosixNVM:${BEE3HOME}/Tools/BEE3/library/src/build/RELEASE:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${BEE3HOME}/Workloads/PosixNVM-opt:$LD_LIBRARY_PATH
+export LD_PRELOAD="libnvp.so"
+#export NVP_TREE_FILE="${BEE3HOME}/Tools/PosixNVM/bin/nvp_moneta.tree"
+export NVP_TREE_FILE="${BEE3HOME}/Workloads/PosixNVM-opt/bin/nvp_bankshot2.tree"
+export CACHE_PATH="/mnt/ramdisk/"
+$@
