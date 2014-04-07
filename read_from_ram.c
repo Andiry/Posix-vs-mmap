@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 	}
 
 	buf = (char *)buf1;
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
+	fd = open("/root/test/test1", O_CREAT | O_RDWR, 0640); 
 //	fd = open("/dev/null", O_WRONLY, 0640); 
 //	fd = open("/dev/zero", O_RDONLY, 0640); 
 	printf("fd: %d\n", fd);

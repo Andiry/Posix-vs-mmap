@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	struct timezone tz;
 	int size;
 	unsigned long long count;
-	char *buf;
+	char *buf, *data;
 
 	clock_gettime(CLOCK_MONOTONIC, &begin);
 	for (i = 0; i < 1; i++) {
@@ -32,10 +32,12 @@ int main(int argc, char **argv)
 
 	buf = malloc(4096);
 	memset(buf, 'c', 4096);
-	fd = open("/root/test/test2", O_RDWR | O_CREAT, 0640);
+	fd = open("/mnt/ramdisk/test2", O_RDWR | O_CREAT, 0640);
+	data = (char *)mmap(NULL, 4096, PROT_WRITE, MAP_SHARED, fd, 0);
 
-	read(fd, buf, 4096);
-	
+//	write(fd, buf, 4096);
+//	memcpy(data, buf, 4096);
+	munmap(data, 4096);
 	close(fd);
 
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);

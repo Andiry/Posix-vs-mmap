@@ -216,6 +216,7 @@ int main(int argc, char **argv)
 	}
 
 	for (size = start_size; size <= END_SIZE; size <<= 1) {
+		count = FILE_SIZE / (size * num_threads);
 		for (i = 0; i < num_threads; i++)
 			memset(buf[i], c, size);
 		c++;
@@ -230,7 +231,7 @@ int main(int argc, char **argv)
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		printf("%s: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t Bandwidth %f MB/s.\n", argv[3], size, count, time, FILE_SIZE * 1024.0 / time);
+		printf("%s: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t Bandwidth %f MB/s, latency %lld nanoseconds.\n", argv[3], size, count, time, FILE_SIZE * 1024.0 / time, time / count);
 		fprintf(output, "%s,%s,%s,%d,%d,%lld,%lld,%lld,%f\n", fs_type, quill_enabled, argv[3], num_threads, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
 	}
 
