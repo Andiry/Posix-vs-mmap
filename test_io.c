@@ -25,9 +25,9 @@ int main(void)
 	ret = pwrite(fd, buf, 4096 * 6, 0);
 	printf("Posix write to file: 0 - 5 ret: %d\n", ret);
 
-	printf("Posix read from file: 2 - 4\n");
-	ret = pread(fd, buf1, 4096 * 3, 4096 * 2);
-	printf("Posix read from file: 2 - 4 ret: %d, buf: %c\n", ret, buf1[0]);
+	printf("Posix read from file: 2 - 6\n");
+	ret = pread(fd, buf1, 4096 * 5, 4096 * 2);
+	printf("Posix read from file: 2 - 6 ret: %d, buf: %c\n", ret, buf1[0]);
 
 	memset(buf, 'f', 4096 * 6);
 	printf("Posix write to file: 1 - 3\n");
