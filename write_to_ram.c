@@ -82,14 +82,14 @@ int main(int argc, char **argv)
 	}
 
 	buf = (char *)buf1;
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
+	fd = open("/root/test1/test1", O_CREAT | O_RDWR, 0640); 
 //	fd = open("/dev/null", O_WRONLY, 0640); 
 //	fd = open("/dev/zero", O_RDONLY, 0640); 
 	printf("fd: %d\n", fd);
 //	start_size = atoi(argv[2]);
 	enable_ftrace = atoi(argv[3]);
 	for (size = start_size; size <= END_SIZE; size <<= 1) {
-//		size = 8192;
+//		size = 4096 * 256;
 //		size = atoi(argv[2]);
 		memset(buf, c, size);
 		c++;
