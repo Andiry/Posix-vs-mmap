@@ -16,6 +16,7 @@ int main(void)
 	char *buf, *buf1;
 	int i;
 	ssize_t ret;
+	char c = 'a';
 
 	buf = malloc(4096);
 	memset(buf, 'd', 4096);
@@ -25,8 +26,12 @@ int main(void)
 	fd = open("/mnt/ramdisk/test1", O_RDWR | O_CREAT, 0640);
 //	fd1 = open("/dev/bankshot2Ctrl0", O_RDWR);
 
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++) {
 		read(fd, buf, 4096);
+		printf("%d: %c %c\n", i, buf[0], buf[4095]);
+//		memset(buf, c++, 4096);
+//		write(fd, buf, 4096);
+	}
 
 out:
 	close(fd);
