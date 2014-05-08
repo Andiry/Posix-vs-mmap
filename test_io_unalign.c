@@ -27,6 +27,10 @@ int main(void)
 	printf("Posix write to file ret: %lu\n", ret);
 	ret = pwrite(fd, buf, 1024, 1024);
 	printf("Posix write to file ret: %lu\n", ret);
+	printf("buf1: %c %c %c %c\n", buf1[0], buf1[1023], buf1[1024], buf1[8192]);
+	ret = pread(fd, buf1, 1024, 1024);
+	printf("Posix read to file ret: %lu\n", ret);
+	printf("buf1: %c %c %c %c\n", buf1[0], buf1[1023], buf1[1024], buf1[8192]);
 
 	close(fd);
 	free(buf);
