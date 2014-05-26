@@ -560,7 +560,7 @@ void random_perf_test(off64_t kilo64,long long reclen,long long *data1,long long
 			   {
 				perror("lseek");
 				exit(68);
-			   };
+			   }
 		  	
 			     if(read(fd, (void *)nbuff, (size_t)reclen) != reclen)
 		  	     {
