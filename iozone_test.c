@@ -20,7 +20,8 @@
 #include <sys/shm.h>
 
 long long page_size = 4096;
-
+char *mainbuffer;
+off64_t offset64 = 0;
 
 static double time_so_far(void)
 {
@@ -54,7 +55,6 @@ read_perf_test(unsigned long kilo64,long long reclen,long long *data1,long long 
 	unsigned long filebytes64;
 	volatile char *buffer1;
 	char *nbuff;
-	char *mainbuffer;
 	int fd,open_flags;
 	int test_foo,ltest;
 	long wval;
@@ -80,7 +80,6 @@ read_perf_test(unsigned long kilo64,long long reclen,long long *data1,long long 
 	fd = 0;
 
 //	mainbuffer = (char *)malloc(4 * 1024 * 4096);
-	posix_memalign(&mainbuffer, (4 * 1024 * 4096), (4 * 1024 *4096));
 
 	/* 
 	 * begin real testing
@@ -176,7 +175,6 @@ read_perf_test(unsigned long kilo64,long long reclen,long long *data1,long long 
 			
 	}
 
-	free(mainbuffer);
 }
 
 void 
@@ -195,7 +193,6 @@ write_perf_test(unsigned long kilo64,long long reclen,long long *data1,long long
 	unsigned long filebytes64;
 	volatile char *buffer1;
 	char *nbuff;
-	char *mainbuffer;
 	int fd,open_flags;
 	int test_foo,ltest;
 	long wval;
@@ -220,7 +217,6 @@ write_perf_test(unsigned long kilo64,long long reclen,long long *data1,long long
 	filebytes64 = numrecs64*reclen;
 	fd = 0;
 
-	mainbuffer = (char *)malloc(4 * 1024 * 4096);
 //	posix_memalign(&mainbuffer, (4 * 1024 * 4096), (4 * 1024 *4096));
 
 	/* 
@@ -317,7 +313,6 @@ write_perf_test(unsigned long kilo64,long long reclen,long long *data1,long long
 			
 	}
 
-	free(mainbuffer);
 }
 
 /************************************************************************/
@@ -342,7 +337,6 @@ void write_perf_test1(off64_t kilo64,long long reclen ,long long *data1,long lon
 	off64_t filebytes64;
 	int ltest;
 	char *maddr;
-	char *mainbuffer;
 	char *wmaddr,*free_addr;
 	char *pbuff;
 	char *nbuff;
@@ -354,7 +348,6 @@ void write_perf_test1(off64_t kilo64,long long reclen ,long long *data1,long lon
 
 	int test_foo;
 
-	mainbuffer = (char *)malloc(4 * 1024 * 4096);
 	nbuff=wmaddr=free_addr=0;
 	traj_offset=0;
 	test_foo=0;
@@ -482,12 +475,171 @@ void write_perf_test1(off64_t kilo64,long long reclen ,long long *data1,long lon
 		  printf("%s: ltest %d writerate %llu\n", __func__, j, writerate[j]);
 	}
 
-	free(mainbuffer);
 }
+
+/************************************************************************/
+/* random_perf_test				        		*/
+/* Random read and write test						*/
+/************************************************************************/
+void random_perf_test(off64_t kilo64,long long reclen,long long *data1,long long *data2)
+{
+	double randreadtime[2];
+	double starttime2;
+	double walltime[2], cputime[2];
+	double compute_val = (double)0;
+	unsigned long long big_rand;
+	long long j;
+	off64_t i,numrecs64;
+	long long Index=0;
+	int flags;
+	unsigned long long randreadrate[2];
+	off64_t filebytes64;
+	off64_t lock_offset=0;
+	volatile char *buffer1;
+	char *wmaddr,*nbuff;
+	char *maddr,*free_addr;
+	int fd,wval;
+	long long *recnum= 0;
+	long long *gc=0;
+	char *filename = "/mnt/ramdisk/test1";
+
+	maddr=free_addr=0;
+	numrecs64 = (kilo64*1024)/reclen;
+        srand48(0);
+
+        recnum = (long long *)malloc(sizeof(*recnum)*numrecs64);
+        if (recnum){
+             /* pre-compute random sequence based on 
+		Fischer-Yates (Knuth) card shuffle */
+            for(i = 0; i < numrecs64; i++){
+                recnum[i] = i;
+            }
+            for(i = 0; i < numrecs64; i++) {
+                long long tmp;
+               big_rand = lrand48();
+               big_rand = big_rand%numrecs64;
+               tmp = recnum[i];
+               recnum[i] = recnum[big_rand];
+               recnum[big_rand] = tmp;
+            }
+        }
+	else
+	{
+		fprintf(stderr,"Random uniqueness fallback.\n");
+	}
+	flags = O_RDWR;
+
+	fd=0;
+	filebytes64 = numrecs64*reclen;
+	for( j=0; j<2; j++ )
+	{
+		if(j==0)
+			flags |=O_CREAT;
+	     if((fd = open(filename, ((int)flags),0640))<0){
+			printf("\nCan not open temporary file for read/write\n");
+			perror("open");
+			exit(66);
+	     }
+
+	     nbuff=mainbuffer;
+             srand48(0);
+
+	     compute_val=(double)0;
+	     starttime2 = time_so_far();
+	     if ( j==0 ){
+		for(i=0; i<numrecs64; i++) {
+                        if (recnum) {
+				offset64 = reclen * (long long)recnum[i];
+                        }
+			else
+			{
+			   offset64 = reclen * (lrand48()%numrecs64);
+			}
+
+			   if(lseek( fd, offset64, SEEK_SET )<0)
+			   {
+				perror("lseek");
+				exit(68);
+			   };
+		  	
+			     if(read(fd, (void *)nbuff, (size_t)reclen) != reclen)
+		  	     {
+#ifdef NO_PRINT_LLD
+				 printf("\nError reading block at %ld\n",
+					 offset64); 
+#else
+				 printf("\nError reading block at %lld\n",
+					 offset64); 
+#endif
+				 perror("read");
+				 exit(70);
+		 	     }
+		}
+	     }
+	     else
+	     {
+			for(i=0; i<numrecs64; i++) 
+			{
+                                if (recnum) {
+				  offset64 = reclen * (long long)recnum[i];
+                                }
+			        else
+			        {
+				  offset64 = reclen * (lrand48()%numrecs64);
+				}
+
+				  lseek( fd, offset64, SEEK_SET );
+			 	  wval=write(fd, nbuff,(size_t)reclen);
+			  	  if(wval != reclen)
+			  	  {
+#ifdef NO_PRINT_LLD
+					printf("\nError writing block at %ld\n",
+						offset64); 
+#else
+					printf("\nError writing block at %lld\n",
+						offset64); 
+#endif
+					if(wval==-1)
+						perror("write");
+		 		  }
+			}
+	     } 	/* end of modifications	*kcollins:2-5-96 */
+	        randreadtime[j] = ((time_so_far() - starttime2))-
+			compute_val;
+	     if(randreadtime[j] < (double).000001) 
+	     {
+			randreadtime[j]=(double).000001;
+	     }
+	     		wval=fsync(fd);
+			if(wval==-1){
+				perror("fsync");
+//				signal_handler();
+			}
+		wval=close(fd);
+		if(wval==-1){
+			perror("close");
+//			signal_handler();
+		}
+    	}
+        for(j=0;j<2;j++)
+        {
+                  randreadrate[j] = 
+		      (unsigned long long) ((double) filebytes64 / randreadtime[j]);
+		  printf("%s: ltest %d randomrate %llu\n", __func__, j, randreadrate[j]);
+	}
+	/* Must save walltime & cputime before calling store_value() for each/any cell.*/
+	if(recnum)
+		free(recnum);
+}
+
 
 int main(void)
 {
+//	mainbuffer = (char *)malloc(4 * 1024 * 4096);
+	posix_memalign(&mainbuffer, (4 * 1024 * 4096), (4 * 1024 *4096));
 	write_perf_test1(1048576, 4096, NULL, NULL);
 	read_perf_test(1048576, 4096, NULL, NULL);
+	random_perf_test(1048576, 4096, NULL, NULL);
+	free(mainbuffer);
 	return 0;
 }
