@@ -320,9 +320,174 @@ write_perf_test(unsigned long kilo64,long long reclen,long long *data1,long long
 	free(mainbuffer);
 }
 
+/************************************************************************/
+/* write_perf_test ()				        		*/
+/* Write and re-write test						*/
+/************************************************************************/
+void write_perf_test1(off64_t kilo64,long long reclen ,long long *data1,long long *data2)
+{
+	double starttime1;
+	double writetime[2];
+	double walltime[2], cputime[2];
+	double qtime_start,qtime_stop;
+	double hist_time;
+	double compute_val = (double)0;
+	long long i,j;
+	off64_t numrecs64,traj_offset;
+	off64_t lock_offset=0;
+	long long Index = 0;
+	long long file_flags = 0;
+	long long traj_size;
+	unsigned long long writerate[2];
+	off64_t filebytes64;
+	int ltest;
+	char *maddr;
+	char *mainbuffer;
+	char *wmaddr,*free_addr;
+	char *pbuff;
+	char *nbuff;
+	int fd,wval;
+	int notruncate = 1;
+	unsigned long w_traj_ops_completed=0;
+	unsigned long w_traj_bytes_completed=0;
+	char *filename = "/mnt/ramdisk/test1";
+
+	int test_foo;
+
+	mainbuffer = (char *)malloc(4 * 1024 * 4096);
+	nbuff=wmaddr=free_addr=0;
+	traj_offset=0;
+	test_foo=0;
+	hist_time=qtime_start=qtime_stop=0;
+	maddr=0;
+	pbuff=mainbuffer;
+	numrecs64 = (kilo64*1024)/reclen;
+	filebytes64 = numrecs64*reclen;
+
+	fd = 0;
+	file_flags = O_RDWR;
+
+/* Sanity check */
+/* Some filesystems do not behave correctly and fail
+ * when this sequence is performned. This is a very
+ * bad thing. It breaks many applications and lurks
+ * around quietly. This code should never get
+ * triggered, but in the case of running iozone on
+ * an NFS client, the filesystem type on the server
+ * that is being exported can cause this failure.
+ * If this failure happens, then the NFS client is
+ * going to going to have problems, but the acutal
+ * problem is the filesystem on the NFS server.
+ * It's not NFS, it's the local filesystem on the
+ * NFS server that is not correctly permitting
+ * the sequence to function.
+ */
+/* _SUA_ Services for Unix Applications, under Windows
+    does not have a truncate, so this must be skipped */
+        if((fd = open(filename, (int)O_CREAT|O_RDWR,0))<0)
+        {
+                printf("\nCan not open temp file: %s\n",
+                        filename);
+                perror("open");
+                exit(44);
+        }
+		if(!notruncate)
+		{
+			wval=ftruncate(fd,0);
+			if(wval < 0)
+			{
+				printf("\n\nSanity check failed. Do not deploy this filesystem in a production environment !\n");
+				exit(44);
+			}
+			close(fd);
+
+		}
+/* Sanity check */
+
+	ltest=3;
+
+	for( j=0; j<ltest; j++)
+	{
+		if(j==0)
+		{
+			if(!notruncate)
+			{
+	  	   		if((fd = creat(filename, 0640))<0)
+	  	   		{
+					printf("\nCan not create temp file: %s\n", 
+						filename);
+					perror("creat");
+					exit(42);
+	  	   		}
+			}
+		}
+		if(fd) 
+			close(fd);
+
+	  	 if((fd = open(filename, (int)file_flags,0))<0)
+	  	 {
+			printf("\nCan not open temp file: %s\n", 
+				filename);
+			perror("open");
+			exit(44);
+	  	 }
+
+		wval=fsync(fd);
+		if(wval==-1){
+			perror("fsync");
+		}
+		pbuff=mainbuffer;
+		starttime1 = time_so_far();
+
+		compute_val=(double)0;
+		w_traj_ops_completed=0;
+		w_traj_bytes_completed=0;
+
+		for(i=0; i<numrecs64; i++){
+			    wval=write(fd, pbuff, (size_t ) reclen);
+			    if(wval != reclen)
+			    {
+#ifdef NO_PRINT_LLD
+			    	printf("\nError writing block %ld, fd= %d\n", i,
+					 fd);
+#else
+			    	printf("\nError writing block %lld, fd= %d\n", i,
+					 fd);
+#endif
+			    	if(wval == -1)
+					perror("write");
+			    }
+			w_traj_ops_completed++;
+			w_traj_bytes_completed+=reclen;
+		}
+
+		writetime[j] = ((time_so_far() - starttime1))
+			-compute_val;
+		if(writetime[j] < (double).000001) 
+		{
+			writetime[j]=(double).000001;
+		}
+		wval=close(fd);
+		if(wval==-1){
+			perror("close");
+		}
+	}
+
+	filebytes64=w_traj_bytes_completed;
+		
+        for(j=0;j<ltest;j++)
+        {
+                  writerate[j] = 
+                    (unsigned long long) ((double) filebytes64 / writetime[j]);
+		  printf("%s: ltest %d writerate %llu\n", __func__, j, writerate[j]);
+	}
+
+	free(mainbuffer);
+}
+
 int main(void)
 {
-	write_perf_test(1048576, 4096, NULL, NULL);
+	write_perf_test1(1048576, 4096, NULL, NULL);
 	read_perf_test(1048576, 4096, NULL, NULL);
 	return 0;
 }
