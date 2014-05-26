@@ -9,13 +9,13 @@
 #include<sys/mman.h>
 #include<sys/time.h>
 
-#define END_SIZE	(64UL * 1024 * 1024) 
+#define END_SIZE	(4UL * 1024 * 4096) 
 
-const int start_size = 512;
+const int start_size = 4096;
 
 int main(int argc, char **argv)
 {
-	int fd, i;
+	int fd, i, j;
 	long long time, time1;
 	unsigned long long FILE_SIZE;
 	size_t len;
@@ -82,16 +82,19 @@ int main(int argc, char **argv)
 	}
 
 	buf = (char *)buf1;
-	fd = open("/root/test/test1", O_CREAT | O_RDWR, 0640); 
+//	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDONLY, 0640); 
 //	fd = open("/dev/null", O_WRONLY, 0640); 
 //	fd = open("/dev/zero", O_RDONLY, 0640); 
 	printf("fd: %d\n", fd);
 //	start_size = atoi(argv[2]);
 	enable_ftrace = atoi(argv[3]);
-	for (size = start_size; size <= END_SIZE; size <<= 1) {
-//		size = 8192;
+	for (j = 0; j < 3; j++) {
+	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDONLY, 0640); 
+		size = start_size;
 //		size = atoi(argv[2]);
 		memset(buf, '\0', size);
+		if (read(fd, buf, size) != size)
+			printf("Error reading\n");
 		lseek(fd, 0, SEEK_SET);
 		offset = 0;
 #if 0
@@ -112,11 +115,10 @@ int main(int argc, char **argv)
 		printf("Warm cache process %lld microseconds\n", time1);
 
 #endif
-		lseek(fd, 0, SEEK_SET);
 		count = FILE_SIZE / size;
 		offset = 0;
-		if (enable_ftrace)
-			system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
+//		if (enable_ftrace)
+//			system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
 	
 		gettimeofday(&begin, &tz);
 		clock_gettime(CLOCK_MONOTONIC, &start);
@@ -130,17 +132,18 @@ int main(int argc, char **argv)
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		gettimeofday(&finish, &tz);
 
-		if (enable_ftrace)
-			system("echo 0 > /sys/kernel/debug/tracing/tracing_on");
+//		if (enable_ftrace)
+//			system("echo 0 > /sys/kernel/debug/tracing/tracing_on");
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
-		printf("Read: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
+		printf("Read: Size %d bytes,\t %lld times,\t %lld nanoseconds, \t %lld us, \t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time1, time / count, FILE_SIZE * 1024.0 / time);
 		printf("Read process %lld microseconds\n", time1);
 		fprintf(output, "%s,%s,%d,%lld,%lld,%lld,%f,%lld\n", fs_type, quill_enabled, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time, time / count);
+		close(fd);
 	}
 
 	fclose(output);
-	close(fd);
+//	close(fd);
 	free(buf1);
 	return 0;
 }
