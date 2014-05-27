@@ -35,9 +35,12 @@ int main(int argc, char **argv)
 	char file_size_num[20];
 	char filename[60];
 	int enable_ftrace;
+	long long *recnum= 0;
+	unsigned long long big_rand;
+	off64_t offset64 = 0;
 
 	if (argc < 6) {
-		printf("Usage: ./write_to_ram $FS $SCNEARIO $ENABLE_FTRACE $FILE_SIZE $filename\n");
+		printf("Usage: ./random_perf_test_to_ram $FS $SCNEARIO $ENABLE_FTRACE $FILE_SIZE $filename\n");
 		return 0;
 	}
 
@@ -88,8 +91,28 @@ int main(int argc, char **argv)
 	printf("fd: %d\n", fd);
 //	start_size = atoi(argv[2]);
 	enable_ftrace = atoi(argv[3]);
+
+        srand48(0);
+
+	size = start_size;
+	count = FILE_SIZE / size;
+        recnum = (long long *)malloc(sizeof(*recnum) * count);
+        /* pre-compute random sequence based on 
+		Fischer-Yates (Knuth) card shuffle */
+	for(i = 0; i < count; i++){
+		recnum[i] = i;
+	}
+	for(i = 0; i < count; i++) {
+		long long tmp;
+		big_rand = lrand48();
+		big_rand = big_rand % count;
+		tmp = recnum[i];
+		recnum[i] = recnum[big_rand];
+		recnum[big_rand] = tmp;
+	}
+
 	for (j = 0; j < 3; j++) {
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDONLY, 0640); 
+		fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 		size = start_size;
 //		size = atoi(argv[2]);
 		memset(buf, '\0', size);
@@ -97,33 +120,26 @@ int main(int argc, char **argv)
 			printf("Error reading\n");
 		lseek(fd, 0, SEEK_SET);
 		offset = 0;
-#if 0
-		count = 1073741824 / size;
-		// Warm the cache with 1GB write
-		gettimeofday(&begin, &tz);
-		clock_gettime(CLOCK_MONOTONIC, &start);
-		for (i = 0; i < count; i++) {
-			if (pwrite(fd, buf, size, offset) != size)
-				printf("ERROR!\n");
-			offset += size;
-		}
-		clock_gettime(CLOCK_MONOTONIC, &end);
-		gettimeofday(&finish, &tz);
-		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
-		printf("Write warm: Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time / count, FILE_SIZE * 1024.0 / time);
-		printf("Warm cache process %lld microseconds\n", time1);
 
-#endif
-		count = FILE_SIZE / size;
-		offset = 0;
-//		if (enable_ftrace)
-//			system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
-	
 		gettimeofday(&begin, &tz);
 		clock_gettime(CLOCK_MONOTONIC, &start);
+	
 		for (i = 0; i < count; i++) {
-			read(fd, buf, size);
+			offset64 = size * (long long)recnum[i];
+
+			if(lseek(fd, offset64, SEEK_SET )<0)
+			{
+				perror("lseek");
+				exit(68);
+			}
+
+			if (j < 2) {
+				if (read(fd, buf, size) != size)
+					printf("ERROR read!\n");
+			} else {
+				if (write(fd, buf, size) != size)
+					printf("ERROR write!\n");
+			}
 //			pread(fd, buf, size, offset);
 //			if (pread(fd, buf, size, offset) != size)
 //				printf("ERROR!\n");
@@ -132,8 +148,6 @@ int main(int argc, char **argv)
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		gettimeofday(&finish, &tz);
 
-//		if (enable_ftrace)
-//			system("echo 0 > /sys/kernel/debug/tracing/tracing_on");
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		time1 = (finish.tv_sec - begin.tv_sec) * 1e6 + (finish.tv_usec - begin.tv_usec);
 		printf("Read: Size %d bytes,\t %lld times,\t %lld nanoseconds, \t %lld us, \t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", size, count, time, time1, time / count, FILE_SIZE * 1024.0 / time);
@@ -145,5 +159,6 @@ int main(int argc, char **argv)
 	fclose(output);
 //	close(fd);
 	free(buf1);
+	free(recnum);
 	return 0;
 }
