@@ -10,9 +10,9 @@
 #include<stdbool.h>
 #include<sys/mman.h>
 
-#define END_SIZE	(4UL * 1024) 
+#define END_SIZE	(4UL * 1024 * 1024) 
 
-const int start_size = 4096;
+const int start_size = 512;
 unsigned long long FILE_SIZE;
 char **buf;
 int num_threads;
