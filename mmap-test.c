@@ -26,7 +26,6 @@ int main(int argc, char ** argv)
 	size_t len;
 	char c = 'A';
 	char unit;
-	char *origin_data;
 	char *data;
 	struct timespec start, end;
 	struct timeval begin, finish;
@@ -114,34 +113,31 @@ int main(int argc, char ** argv)
 
 	buf = (char *)buf1;
 
-	fd = open("/mnt/ramdisk1/test1", O_CREAT | O_RDWR, 0640); 
+	fd = open("/media/root/New_Volume2/test1", O_CREAT | O_RDWR, 0640); 
 //	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
-	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED, fd, 0);
-	origin_data = data;
+//	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED, fd, 0);
 
 	for (size = start_size; size <= END_SIZE; size <<= 1) {
 //		size = atoi(argv[2]);
 //		enable_ftrace = atoi(argv[3]);
 		offset = 0;
 		count = FILE_SIZE / size;
-		data = origin_data;
 		mmap_times = 0;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
 			if (offset % MMAP_UNIT == 0) {
 				mmap_times++;
-				data = (char *)mmap(NULL, MMAP_UNIT, PROT_WRITE, MAP_SHARED, fd, 0);
+				data = (char *)mmap(NULL, MMAP_UNIT, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
 			}
 			memcpy(buf, data + (offset % MMAP_UNIT), size);
 			offset += size;
 		}
-		msync(origin_data, FILE_SIZE, MS_ASYNC);
+//		msync(origin_data, FILE_SIZE, MS_ASYNC);
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 		printf("mmap: %d times, Size %d bytes,\t %lld times,\t %lld nanoseconds,\t latency %lld nanoseconds, \t Bandwidth %f MB/s.\n", mmap_times, size, count, time, time / count, FILE_SIZE * 1024.0 / time);
-//		fprintf(output, "%s,%s,%d,%lld,%d,%lld,%f\n", fs_type, use_nvp, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time);
 		fprintf(output, "%s,%s,%d,%lld,%lld,%lld,%f,%lld\n", fs_type, use_nvp, size, FILE_SIZE, count, time, FILE_SIZE * 1.0 / time, time / count);
 	}
 
