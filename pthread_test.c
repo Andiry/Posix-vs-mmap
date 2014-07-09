@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 	printf("# fds: ");
 	fd = malloc(num_threads * sizeof(int));
 	for (i = 0; i < num_threads; i++) {
-		fd[i] = open("/mnt/ramdisk1/test1", O_CREAT | O_RDWR, 0640); 
+		fd[i] = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 		printf("%d ", fd[i]);
 	}
 	printf("\n");
