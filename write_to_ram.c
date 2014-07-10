@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include<fcntl.h>
 #include<time.h>
+#include<unistd.h>
 #include<string.h>
 #include<malloc.h>
 #include<stdlib.h>

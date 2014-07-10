@@ -8,6 +8,7 @@
 #include<stdlib.h>
 #include<sys/mman.h>
 #include<sys/time.h>
+#include<unistd.h>
 
 #define END_SIZE	(4UL * 1024 * 4096) 
 

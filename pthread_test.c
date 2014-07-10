@@ -8,7 +8,9 @@
 #include<stdlib.h>
 #include<stdint.h>
 #include<stdbool.h>
+#include<pthread.h>
 #include<sys/mman.h>
+#include<sys/time.h>
 
 #define END_SIZE	(4UL * 1024 * 1024) 
 
