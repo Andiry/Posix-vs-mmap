@@ -103,6 +103,7 @@ int main(int argc, char **argv)
 		memset(buf, c, size);
 	}
 
+	fsync(fd);
 	close(fd);
 
 	fclose(output);
