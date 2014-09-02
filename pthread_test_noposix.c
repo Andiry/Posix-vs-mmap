@@ -28,10 +28,10 @@ enum fops_type {
 	op_pwrite
 } fops;
 
-//ssize_t read(int, void *, size_t);
-//ssize_t write(int, void *, size_t);
-//ssize_t pread(int, void *, size_t, off_t);
-//ssize_t pwrite(int, void *, size_t, off_t);
+extern ssize_t read1(int, void *, size_t);
+extern ssize_t write1(int, void *, size_t);
+extern ssize_t pread1(int, void *, size_t, off_t);
+extern ssize_t pwrite1(int, void *, size_t, off_t);
 //ssize_t (*fops)(int, void *, size_t, ...);
 
 //Doorbell. Each 64 bytes long to avoid cache contention.
@@ -92,19 +92,19 @@ void *pthread_transfer(void *arg)
 //			fops(fd, buf[pid], size, offset);
 			switch (fops) {
 			case op_read:
-				if (read(fd[pid], buf[pid], size) != size)
+				if (read1(fd[pid], buf[pid], size) != size)
 					printf("ERROR! %d %d\n", fd[pid], size);
 				break;
 			case op_write:
-				if (write(fd[pid], buf[pid], size) != size)
+				if (write1(fd[pid], buf[pid], size) != size)
 					printf("ERROR! %d %d\n", fd[pid], size);
 				break;
 			case op_pread:
-				if (pread(fd[pid], buf[pid], size, offset) != size)
+				if (pread1(fd[pid], buf[pid], size, offset) != size)
 					printf("ERROR! %d %d\n", fd[pid], size);
 				break;
 			case op_pwrite:
-				if (pwrite(fd[pid], buf[pid], size, offset) != size)
+				if (pwrite1(fd[pid], buf[pid], size, offset) != size)
 					printf("ERROR! %d %d\n", fd[pid], size);
 				break;
 			default:
@@ -228,19 +228,19 @@ int main(int argc, char **argv)
 //			pwrite(fd, buf[i], size, offset);
 			switch (fops) {
 			case op_read:
-				if (read(fd[i], buf[i], size) != size)
+				if (read1(fd[i], buf[i], size) != size)
 					printf("ERROR! %d %d\n", fd[i], size);
 				break;
 			case op_write:
-				if (write(fd[i], buf[i], size) != size)
+				if (write1(fd[i], buf[i], size) != size)
 					printf("ERROR! %d %d\n", fd[i], size);
 				break;
 			case op_pread:
-				if (pread(fd[i], buf[i], size, offset) != size)
+				if (pread1(fd[i], buf[i], size, offset) != size)
 					printf("ERROR! %d %d\n", fd[i], size);
 				break;
 			case op_pwrite:
-				if (pwrite(fd[i], buf[i], size, offset) != size)
+				if (pwrite1(fd[i], buf[i], size, offset) != size)
 					printf("ERROR! %d %d\n", fd[i], size);
 				break;
 			default:
