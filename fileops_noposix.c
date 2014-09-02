@@ -29,22 +29,58 @@
 
 #define DO_ALIGNMENT_CHECKS 0
 
-ssize_t read1(int fd, void *buf, size_t size)
+#define OPEN_MAX	1024
+
+struct NVFile
+{
+	int fd;
+	volatile size_t offset;
+	size_t length;
+	size_t maplength;
+	char *volatile data;
+};
+
+struct NVFile* fd_lookup;
+
+ssize_t read1(int fd, void **buf, size_t size)
+{
+	struct NVFile *nvf = &fd_lookup[fd];
+	ssize_t length;
+
+	if (nvf->offset >= nvf->length)
+		return 0;
+
+	*buf = nvf->data + nvf->offset;
+	length = nvf->length >= nvf->offset + size ?
+			size : nvf->length - nvf->offset;
+
+	nvf->offset += length;
+
+	return length;
+}
+
+ssize_t write1(int fd, void **buf, size_t size)
 {
 	return size;
 }
 
-ssize_t write1(int fd, void *buf, size_t size)
+ssize_t pread1(int fd, void **buf, size_t size, off_t offset)
 {
-	return size;
+	struct NVFile *nvf = &fd_lookup[fd];
+	ssize_t length;
+
+	if (offset >= nvf->length)
+		return 0;
+
+	*buf = nvf->data + offset;
+	length = nvf->length >= offset + size ?
+			size : nvf->length - offset;
+
+	return length;
+
 }
 
-ssize_t pread1(int fd, void *buf, size_t size, off_t offset)
-{
-	return size;
-}
-
-ssize_t pwrite1(int fd, void *buf, size_t size, off_t offset)
+ssize_t pwrite1(int fd, void **buf, size_t size, off_t offset)
 {
 	return size;
 }
@@ -52,9 +88,11 @@ ssize_t pwrite1(int fd, void *buf, size_t size, off_t offset)
 __attribute__((constructor)) void init(void)
 {
 	printf("Start.\n");
+	fd_lookup = (struct NVFile *)calloc(OPEN_MAX, sizeof(struct NVFile));
 }
 
 __attribute__((destructor)) void fini(void)
 {
 	printf("Finish.\n");
+	free(fd_lookup);
 }
