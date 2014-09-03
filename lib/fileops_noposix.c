@@ -55,6 +55,11 @@ ssize_t read1(int fd, void **buf, size_t size)
 	length = nvf->length >= nvf->offset + size ?
 			size : nvf->length - nvf->offset;
 
+	if (length != size)
+		printf("read ERROR: request %lu, return %lu, offset %lu, "
+			"file length %lu\n", size, length, nvf->offset,
+			nvf->length);
+
 	nvf->offset += length;
 
 	return length;
@@ -84,6 +89,27 @@ ssize_t pread1(int fd, void **buf, size_t size, off_t offset)
 ssize_t pwrite1(int fd, void **buf, size_t size, off_t offset)
 {
 	return size;
+}
+
+off_t lseek1(int fd, off_t offset, int whence)
+{
+	struct NVFile *nvf = &fd_lookup[fd];
+
+	switch (whence) {
+	case SEEK_SET:
+		nvf->offset = offset;
+		break;
+	case SEEK_CUR:
+		nvf->offset += offset;
+		break;
+	case SEEK_END:
+		nvf->offset = nvf->length + offset;
+		break;
+	default:
+		break;
+	}
+
+	return nvf->offset;
 }
 
 int open1(const char* path, int oflag, mode_t mode)

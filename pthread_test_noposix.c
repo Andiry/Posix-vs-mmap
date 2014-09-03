@@ -34,6 +34,7 @@ extern ssize_t pread1(int, void **, size_t, off_t);
 extern ssize_t pwrite1(int, void **, size_t, off_t);
 extern int open1(const char* path, int oflag, mode_t mode);
 extern int close1(int fd);
+extern off_t lseek1(int fd, off_t offset, int whence);
 //ssize_t (*fops)(int, void *, size_t, ...);
 
 //Doorbell. Each 64 bytes long to avoid cache contention.
@@ -88,7 +89,7 @@ void *pthread_transfer(void *arg)
 
 		offset = start_offset;
 		if (fops == op_read || fops == op_write)
-			lseek(fd[pid], offset, SEEK_SET);
+			lseek1(fd[pid], offset, SEEK_SET);
 		count = FILE_SIZE / (num_threads * size);
 		for (i = 0; i < count; i++) { 
 //			fops(fd, buf[pid], size, offset);
@@ -131,6 +132,7 @@ int main(int argc, char **argv)
 	long long time, time1;
 	size_t len;
 	char c = 'a';
+	char **origin_buf;
 	char unit;
 	struct timespec start, end;
 	struct timeval start1, end1;
@@ -203,6 +205,7 @@ int main(int argc, char **argv)
 
 	printf("# pthreads: %d\n", num_threads);
 	buf = (char **)malloc(num_threads * sizeof(char *));
+	origin_buf = buf;
 	for (i = 0; i < num_threads; i++) { 
 		if (posix_memalign((void **)(buf + i), END_SIZE, END_SIZE)) { // up to 64MB
 			printf("ERROR - POSIX NOMEM!\n");
@@ -225,7 +228,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < num_threads; i++) {
 		offset = FILE_SIZE / num_threads * i;
 		if (fops == op_read || fops == op_write)
-			lseek(fd[i], offset, SEEK_SET);
+			lseek1(fd[i], offset, SEEK_SET);
 		for (j = 0; j < count; j++) { 
 //			pwrite(fd, buf[i], size, offset);
 			switch (fops) {
@@ -265,7 +268,7 @@ int main(int argc, char **argv)
 			memset(buf[i], c, size);
 		c++;
 		for (i = 0; i < num_threads; i++)
-			lseek(fd[i], 0, SEEK_SET);
+			lseek1(fd[i], 0, SEEK_SET);
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		gettimeofday(&start1, NULL);
@@ -285,10 +288,10 @@ int main(int argc, char **argv)
 	fclose(output);
 	for (i = 0; i < num_threads; i++) {
 		pthread_join(pthreads[i], NULL);
-		free(buf[i]);
+//		free(buf[i]);
 		close1(fd[i]);
 	}
-	free(buf);
+	free(origin_buf);
 	free(fd);
 	free(pthreads);
 	return 0;
