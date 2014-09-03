@@ -13,9 +13,9 @@
 #include<sys/mman.h>
 #include<sys/time.h>
 
-#define END_SIZE	(4UL * 1024 * 1024) 
+#define END_SIZE	(4UL * 1024) 
 
-const int start_size = 512;
+const int start_size = 4096;
 unsigned long long FILE_SIZE;
 char **buf;
 int num_threads;
@@ -28,10 +28,10 @@ enum fops_type {
 	op_pwrite
 } fops;
 
-extern ssize_t read1(int, void **, size_t);
-extern ssize_t write1(int, void **, size_t);
-extern ssize_t pread1(int, void **, size_t, off_t);
-extern ssize_t pwrite1(int, void **, size_t, off_t);
+extern ssize_t read1(int, char **, size_t);
+extern ssize_t write1(int, char **, size_t);
+extern ssize_t pread1(int, char **, size_t, off_t);
+extern ssize_t pwrite1(int, char **, size_t, off_t);
 extern int open1(const char* path, int oflag, mode_t mode);
 extern int close1(int fd);
 extern off_t lseek1(int fd, off_t offset, int whence);
@@ -47,6 +47,7 @@ void start_all_pthreads(void)
 {
 	int i;
 
+	printf("start all pthreads\n");
 	for (i = 0; i < num_threads; i++)
 		doorbell[i * 8] = START;
 
@@ -82,8 +83,9 @@ void *pthread_transfer(void *arg)
 	unsigned long long count, offset;
 	int i;
 
-//	printf("start pthread: %d\n", pid);
+	printf("start pthread: %d\n", pid);
 	while (size <= END_SIZE) {
+		printf("pthread transfer: size %d\n", size);
 		while (!pthread_can_start(pid))
 			;
 
@@ -254,6 +256,7 @@ int main(int argc, char **argv)
 			offset += size;
 		}
 	}
+	printf("warm up finished.\n");
 
 	//Allocate the threads
 	pthreads = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
@@ -264,8 +267,8 @@ int main(int argc, char **argv)
 
 	for (size = start_size; size <= END_SIZE; size <<= 1) {
 		count = FILE_SIZE / (size * num_threads);
-		for (i = 0; i < num_threads; i++)
-			memset(buf[i], c, size);
+//		for (i = 0; i < num_threads; i++)
+//			memset(buf[i], c, size);
 		c++;
 		for (i = 0; i < num_threads; i++)
 			lseek1(fd[i], 0, SEEK_SET);
