@@ -34,6 +34,7 @@
 struct NVFile
 {
 	int fd;
+	int valid;
 	volatile size_t offset;
 	size_t length;
 	size_t maplength;
@@ -83,6 +84,52 @@ ssize_t pread1(int fd, void **buf, size_t size, off_t offset)
 ssize_t pwrite1(int fd, void **buf, size_t size, off_t offset)
 {
 	return size;
+}
+
+int open1(const char* path, int oflag, mode_t mode)
+{
+	int fd;
+	struct stat file_st;
+	struct NVFile *nvf;
+	int max_perms;
+
+	fd = open(path, oflag, mode);
+	stat(path, &file_st);
+	nvf = &fd_lookup[fd];
+
+	nvf->length = file_st.st_size;
+	nvf->maplength = 0;
+	nvf->valid = 1;
+	nvf->offset = 0;
+
+	if (oflag & O_RDWR)
+		max_perms = PROT_READ | PROT_WRITE;
+	else if (oflag & O_WRONLY)
+		max_perms = PROT_WRITE;
+	else if (oflag & O_RDONLY)
+		max_perms = PROT_READ;
+	else
+		max_perms = 0;
+
+	nvf->data = (char *)mmap(NULL, nvf->length, max_perms,
+				MAP_SHARED | MAP_POPULATE,
+				fd, 0);
+
+	nvf->maplength = nvf->length;
+
+	return fd;
+}
+
+int close1(int fd)
+{
+	struct NVFile *nvf;
+
+	nvf = &fd_lookup[fd];
+	nvf->valid = 0;
+	munmap(nvf->data, nvf->maplength);
+
+	close(fd);
+	return 0;
 }
 
 __attribute__((constructor)) void init(void)

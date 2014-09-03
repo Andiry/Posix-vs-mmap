@@ -28,10 +28,12 @@ enum fops_type {
 	op_pwrite
 } fops;
 
-extern ssize_t read1(int, void *, size_t);
-extern ssize_t write1(int, void *, size_t);
-extern ssize_t pread1(int, void *, size_t, off_t);
-extern ssize_t pwrite1(int, void *, size_t, off_t);
+extern ssize_t read1(int, void **, size_t);
+extern ssize_t write1(int, void **, size_t);
+extern ssize_t pread1(int, void **, size_t, off_t);
+extern ssize_t pwrite1(int, void **, size_t, off_t);
+extern int open1(const char* path, int oflag, mode_t mode);
+extern int close1(int fd);
 //ssize_t (*fops)(int, void *, size_t, ...);
 
 //Doorbell. Each 64 bytes long to avoid cache contention.
@@ -92,19 +94,19 @@ void *pthread_transfer(void *arg)
 //			fops(fd, buf[pid], size, offset);
 			switch (fops) {
 			case op_read:
-				if (read1(fd[pid], buf[pid], size) != size)
+				if (read1(fd[pid], &buf[pid], size) != size)
 					printf("ERROR! %d %d\n", fd[pid], size);
 				break;
 			case op_write:
-				if (write1(fd[pid], buf[pid], size) != size)
+				if (write1(fd[pid], &buf[pid], size) != size)
 					printf("ERROR! %d %d\n", fd[pid], size);
 				break;
 			case op_pread:
-				if (pread1(fd[pid], buf[pid], size, offset) != size)
+				if (pread1(fd[pid], &buf[pid], size, offset) != size)
 					printf("ERROR! %d %d\n", fd[pid], size);
 				break;
 			case op_pwrite:
-				if (pwrite1(fd[pid], buf[pid], size, offset) != size)
+				if (pwrite1(fd[pid], &buf[pid], size, offset) != size)
 					printf("ERROR! %d %d\n", fd[pid], size);
 				break;
 			default:
@@ -211,7 +213,7 @@ int main(int argc, char **argv)
 	printf("# fds: ");
 	fd = malloc(num_threads * sizeof(int));
 	for (i = 0; i < num_threads; i++) {
-		fd[i] = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
+		fd[i] = open1("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 		printf("%d ", fd[i]);
 	}
 	printf("\n");
@@ -228,19 +230,19 @@ int main(int argc, char **argv)
 //			pwrite(fd, buf[i], size, offset);
 			switch (fops) {
 			case op_read:
-				if (read1(fd[i], buf[i], size) != size)
+				if (read1(fd[i], &buf[i], size) != size)
 					printf("ERROR! %d %d\n", fd[i], size);
 				break;
 			case op_write:
-				if (write1(fd[i], buf[i], size) != size)
+				if (write1(fd[i], &buf[i], size) != size)
 					printf("ERROR! %d %d\n", fd[i], size);
 				break;
 			case op_pread:
-				if (pread1(fd[i], buf[i], size, offset) != size)
+				if (pread1(fd[i], &buf[i], size, offset) != size)
 					printf("ERROR! %d %d\n", fd[i], size);
 				break;
 			case op_pwrite:
-				if (pwrite1(fd[i], buf[i], size, offset) != size)
+				if (pwrite1(fd[i], &buf[i], size, offset) != size)
 					printf("ERROR! %d %d\n", fd[i], size);
 				break;
 			default:
@@ -284,7 +286,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < num_threads; i++) {
 		pthread_join(pthreads[i], NULL);
 		free(buf[i]);
-		close(fd[i]);
+		close1(fd[i]);
 	}
 	free(buf);
 	free(fd);
