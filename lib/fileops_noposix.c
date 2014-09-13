@@ -5,6 +5,7 @@
 #include<fcntl.h>
 #include<time.h>
 #include<string.h>
+#include<errno.h>
 #include<malloc.h>
 #include<stdlib.h>
 #include<stdint.h>
@@ -30,6 +31,8 @@
 #define DO_ALIGNMENT_CHECKS 0
 
 #define OPEN_MAX	1024
+
+#define IS_ERR(x) ((unsigned long)(x) >= (unsigned long)-4095)
 
 struct NVFile
 {
@@ -145,6 +148,9 @@ int open1(const char* path, int oflag, mode_t mode)
 				MAP_SHARED | MAP_POPULATE,
 				fd, 0);
 
+	if (IS_ERR(nvf->data))
+		printf("mmap error: %d\n", nvf->data);
+
 	nvf->maplength = nvf->length;
 
 	return fd;
@@ -189,6 +195,10 @@ ssize_t read1(int fd, char **buf, size_t size)
 				MAP_SHARED | MAP_POPULATE,
 				fd, nvf->offset);
 
+	if (IS_ERR(*buf))
+		printf("read1 mmap error: %s, length %lu, offset %lu\n",
+			strerror(errno), length, nvf->offset % 4096);
+
 	if (length != size)
 		printf("read ERROR: request %lu, return %lu, offset %lu, "
 			"file length %lu\n", size, length, nvf->offset,
@@ -228,6 +238,10 @@ ssize_t pread1(int fd, char **buf, size_t size, off_t offset)
 	*buf = (char *)mmap(NULL, length, max_perms,
 				MAP_SHARED | MAP_POPULATE,
 				fd, offset);
+
+	if (IS_ERR(*buf))
+		printf("pread1 mmap error: %s, length %lu, offset %lu\n",
+			strerror(errno), length, offset % 4096);
 
 	if (length != size)
 		printf("read ERROR: request %lu, return %lu, offset %lu, "

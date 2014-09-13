@@ -13,7 +13,7 @@
 #include<sys/mman.h>
 #include<sys/time.h>
 
-#define END_SIZE	(4UL * 1024) 
+#define END_SIZE	(4UL * 1024 * 1024) 
 
 const int start_size = 4096;
 unsigned long long FILE_SIZE;
