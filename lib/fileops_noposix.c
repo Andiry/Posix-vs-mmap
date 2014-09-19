@@ -44,6 +44,8 @@ struct NVFile
 	size_t length;
 	size_t maplength;
 	char *volatile data;
+	unsigned long *root;
+	unsigned int height;
 };
 
 struct NVFile* fd_lookup;
@@ -170,51 +172,7 @@ int close1(int fd)
 
 #else
 
-ssize_t read1(int fd, char **buf, size_t size)
-{
-	struct NVFile *nvf = &fd_lookup[fd];
-	ssize_t length;
-	int max_perms;
-
-	if (nvf->offset >= nvf->length)
-		return 0;
-
-	if (nvf->canRead && nvf->canWrite)
-		max_perms = PROT_READ | PROT_WRITE;
-	else if (nvf->canWrite)
-		max_perms = PROT_WRITE;
-	else if (nvf->canRead)
-		max_perms = PROT_READ;
-	else
-		max_perms = 0;
-
-	length = nvf->length >= nvf->offset + size ?
-			size : nvf->length - nvf->offset;
-
-	*buf = (char *)mmap(NULL, length, max_perms,
-				MAP_SHARED | MAP_POPULATE,
-				fd, nvf->offset);
-
-	if (IS_ERR(*buf))
-		printf("read1 mmap error: %s, length %lu, offset %lu\n",
-			strerror(errno), length, nvf->offset % 4096);
-
-	if (length != size)
-		printf("read ERROR: request %lu, return %lu, offset %lu, "
-			"file length %lu\n", size, length, nvf->offset,
-			nvf->length);
-
-	nvf->offset += length;
-
-	return length;
-}
-
-ssize_t write1(int fd, char **buf, size_t size)
-{
-	return size;
-}
-
-ssize_t pread1(int fd, char **buf, size_t size, off_t offset)
+ssize_t do_pread(int fd, char **buf, size_t size, off_t offset)
 {
 	struct NVFile *nvf = &fd_lookup[fd];
 	ssize_t length;
@@ -240,13 +198,41 @@ ssize_t pread1(int fd, char **buf, size_t size, off_t offset)
 				fd, offset);
 
 	if (IS_ERR(*buf))
-		printf("pread1 mmap error: %s, length %lu, offset %lu\n",
+		printf("do_pread mmap error: %s, length %lu, offset %lu\n",
 			strerror(errno), length, offset % 4096);
 
 	if (length != size)
-		printf("read ERROR: request %lu, return %lu, offset %lu, "
+		printf("do_pread ERROR: request %lu, return %lu, offset %lu, "
 			"file length %lu\n", size, length, nvf->offset,
 			nvf->length);
+
+	return length;
+
+}
+
+ssize_t read1(int fd, char **buf, size_t size)
+{
+	struct NVFile *nvf = &fd_lookup[fd];
+	ssize_t length;
+
+	length = do_pread(fd, buf, size, nvf->offset);
+
+	nvf->offset += length;
+
+	return length;
+}
+
+ssize_t write1(int fd, char **buf, size_t size)
+{
+	return size;
+}
+
+ssize_t pread1(int fd, char **buf, size_t size, off_t offset)
+{
+	struct NVFile *nvf = &fd_lookup[fd];
+	ssize_t length;
+
+	length = do_pread(fd, buf, size, offset);
 
 	return length;
 
