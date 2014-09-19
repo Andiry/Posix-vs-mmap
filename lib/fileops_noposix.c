@@ -4,6 +4,7 @@
 #include<unistd.h>
 #include<fcntl.h>
 #include<time.h>
+#include<assert.h>
 #include<string.h>
 #include<errno.h>
 #include<malloc.h>
@@ -49,6 +50,11 @@ struct NVFile
 };
 
 struct NVFile* fd_lookup;
+int hit_count;
+int mmap_count;
+
+#define	MAX_MMAP_SIZE	2097152
+#define	ALIGN_MMAP_DOWN(addr)	((addr) & ~(MAX_MMAP_SIZE - 1))
 
 #if 0
 
@@ -172,10 +178,166 @@ int close1(int fd)
 
 #else
 
-ssize_t do_pread(int fd, char **buf, size_t size, off_t offset)
+static void free_btree(unsigned long *root, unsigned long height)
+{
+	int i;
+
+	if (height == 0) return;
+
+	for (i = 0; i < 1024; i++) {
+		if (root[i]) {
+			free_btree((unsigned long *)root[i],
+					height - 1);
+			root[i] = 0;
+		}
+	}
+
+	free(root);
+}
+
+static void free_file(struct NVFile *nvf)
+{
+	unsigned int height = nvf->height;
+	unsigned long *root = nvf->root;
+
+	free_btree(root, height);
+
+	nvf->height = 0;
+	if (nvf->root && height == 0)
+		free(nvf->root);
+
+	nvf->root = NULL;
+}
+
+static void init_file(struct NVFile *nvf)
+{
+	int i;
+
+	if (!nvf->root)
+		nvf->root = malloc(1024 * sizeof(unsigned long));
+
+	for (i = 0 ; i < 1024; i++)
+		nvf->root[i] = 0;
+}
+
+static unsigned long calculate_capacity(unsigned int height)
+{
+	unsigned long capacity = MAX_MMAP_SIZE;
+
+	while (height) {
+		capacity *= 1024;
+		height--;
+	}
+
+	return capacity;
+}
+
+static unsigned int calculate_new_height(off_t offset)
+{
+	unsigned int height = 0;
+	off_t temp_offset = offset / ((unsigned long)1024 * MAX_MMAP_SIZE);
+
+	while (temp_offset) {
+		temp_offset /= 1024;
+		height++;
+	}
+
+	return height;
+}
+
+static ssize_t get_mmap_address(int fd, off_t offset, size_t length,
+		char **buf, int max_perms)
 {
 	struct NVFile *nvf = &fd_lookup[fd];
-	ssize_t length;
+	int i, index;
+	unsigned int height = nvf->height;
+	unsigned int new_height;
+	unsigned long capacity = MAX_MMAP_SIZE;
+	unsigned long *root = nvf->root;
+	unsigned long start_addr;
+	off_t start_offset = offset;
+	size_t result;
+
+	do {
+		capacity = calculate_capacity(height);
+		index = start_offset / capacity;
+		if (index >= 1024 || root[index] == 0)
+			goto not_found;
+
+		if (height)
+			root = (unsigned long *)root[index];
+		else
+			start_addr = root[index];
+
+		start_offset = start_offset % capacity;
+	} while(height--);
+
+	hit_count++;
+	goto done;
+
+not_found:
+	start_offset = ALIGN_MMAP_DOWN(offset);
+
+	start_addr = (unsigned long)mmap(NULL, MAX_MMAP_SIZE, max_perms,
+				MAP_SHARED | MAP_POPULATE,
+				fd, start_offset);
+	mmap_count++;
+
+	if (start_addr == MAP_FAILED) {
+		printf("mmap failed for fd %d\n", fd);
+		assert(0);
+	}
+
+	height = nvf->height;
+	new_height = calculate_new_height(offset);
+
+	if (height < new_height) {
+		while (height < new_height) {
+			unsigned long old_root = (unsigned long)nvf->root;
+			nvf->root = malloc(1024 * sizeof(unsigned long));
+			for (i = 0;  i < 1024; i++)
+				nvf->root[i] = 0;
+			nvf->root[0] = (unsigned long)old_root;
+			height++;
+		}
+
+		nvf->height = new_height;
+		height = new_height;
+	}
+
+	root = nvf->root;
+	do {
+		capacity = calculate_capacity(height);
+		index = start_offset / capacity;
+		if (height) {
+			if (root[index] == 0) {
+				root[index] = (unsigned long)malloc(1024 *
+						sizeof(unsigned long));
+				root = (unsigned long *)root[index];
+				for (i = 0; i < 1024; i++)
+					root[i] = 0;
+			} else {
+				root = (unsigned long *)root[index];
+			}
+		} else {
+			root[index] = start_addr;
+		}
+		start_offset = start_offset % capacity;
+	} while(height--);
+
+done:
+	*buf = (char *)(start_addr + offset % MAX_MMAP_SIZE);
+	result = MAX_MMAP_SIZE - (offset % MAX_MMAP_SIZE);
+	if (result > length)
+		result = length;
+
+	return result;
+}
+
+static ssize_t do_pread(int fd, char **buf, size_t size, off_t offset)
+{
+	struct NVFile *nvf = &fd_lookup[fd];
+	ssize_t length, result;
 	int max_perms;
 
 	if (offset >= nvf->length)
@@ -193,20 +355,21 @@ ssize_t do_pread(int fd, char **buf, size_t size, off_t offset)
 	length = nvf->length >= offset + size ?
 			size : nvf->length - offset;
 
-	*buf = (char *)mmap(NULL, length, max_perms,
-				MAP_SHARED | MAP_POPULATE,
-				fd, offset);
+	if (length <= 0)
+		return 0;
+
+	result = get_mmap_address(fd, offset, length, buf, max_perms);
 
 	if (IS_ERR(*buf))
 		printf("do_pread mmap error: %s, length %lu, offset %lu\n",
 			strerror(errno), length, offset % 4096);
 
-	if (length != size)
+	if (result != size)
 		printf("do_pread ERROR: request %lu, return %lu, offset %lu, "
-			"file length %lu\n", size, length, nvf->offset,
+			"file length %lu\n", size, result, nvf->offset,
 			nvf->length);
 
-	return length;
+	return result;
 
 }
 
@@ -289,6 +452,8 @@ int open1(const char* path, int oflag, mode_t mode)
 	else if (oflag & O_RDONLY)
 		nvf->canRead = 1;
 
+	init_file(nvf);
+
 	return fd;
 }
 
@@ -298,6 +463,8 @@ int close1(int fd)
 
 	nvf = &fd_lookup[fd];
 	nvf->valid = 0;
+
+	free_file(nvf);
 
 	close(fd);
 	return 0;
@@ -313,6 +480,6 @@ __attribute__((constructor)) void init(void)
 
 __attribute__((destructor)) void fini(void)
 {
-	printf("Finish.\n");
+	printf("Finish. hit %d, mmap %d\n", hit_count, mmap_count);
 	free(fd_lookup);
 }

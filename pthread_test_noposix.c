@@ -4,6 +4,7 @@
 #include<unistd.h>
 #include<fcntl.h>
 #include<time.h>
+#include<assert.h>
 #include<string.h>
 #include<malloc.h>
 #include<stdlib.h>
@@ -13,7 +14,7 @@
 #include<sys/mman.h>
 #include<sys/time.h>
 
-#define END_SIZE	(4UL * 1024 * 1024) 
+#define END_SIZE	(4UL * 1024 * 512) 
 
 const int start_size = 4096;
 unsigned long long FILE_SIZE;
