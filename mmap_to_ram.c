@@ -13,9 +13,10 @@
 
 #include "memcpy.h"
 
-#define END_SIZE	(64UL * 1024 * 1024) 
+//#define END_SIZE	(64UL * 1024 * 1024) 
+#define END_SIZE	4096 
 
-const int start_size = 512;
+const int start_size = 4096;
 
 int main(int argc, char ** argv)
 {
@@ -87,10 +88,15 @@ int main(int argc, char ** argv)
 
 	buf = (char *)buf1;
 
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
+//	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR | O_DIRECT, 0640); 
+	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
+
+	gettimeofday(&begin, &tz);
 //	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
-	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED, fd, 0);
+	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
+//	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED, fd, 0);
 	origin_data = data;
+	gettimeofday(&finish, &tz);
 
 	enable_ftrace = atoi(argv[3]);
 	for (size = start_size; size <= END_SIZE; size <<= 1) {
@@ -119,20 +125,18 @@ int main(int argc, char ** argv)
 		printf("mmap warm cache process %lld microseconds\n", time1);
 #endif
 		count = FILE_SIZE / size;
-		data = origin_data;
 
 		if (enable_ftrace)
 			system("echo 1 > /sys/kernel/debug/tracing/tracing_on");
 	
-		gettimeofday(&begin, &tz);
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
-			mmx2_memcpy(data, buf, size);
+//			mmx2_memcpy(data, buf, size);
+			memcpy(buf, data, size);
 			data += size;
 		}
-		msync(origin_data, FILE_SIZE, MS_ASYNC);
+//		msync(origin_data, FILE_SIZE, MS_ASYNC);
 		clock_gettime(CLOCK_MONOTONIC, &end);
-		gettimeofday(&finish, &tz);
 
 		if (enable_ftrace)
 			system("echo 0 > /sys/kernel/debug/tracing/tracing_on");
