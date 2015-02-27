@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	int req_size;
 
 	if (argc < 6) {
-		printf("Usage: ./integrity_test2_write $FS $SCNEARIO $REQ_SIZE $FILE_SIZE $filename\n");
+		printf("Usage: ./integrity_test2_read $FS $SCNEARIO $REQ_SIZE $FILE_SIZE $filename\n");
 		return 0;
 	}
 
