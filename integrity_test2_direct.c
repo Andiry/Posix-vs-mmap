@@ -89,7 +89,6 @@ int main(int argc, char **argv)
 		req_size = END_SIZE;
 
 	size = req_size;
-	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 	memset(buf, c, size);
 	lseek(fd, 0, SEEK_SET);
 	count = FILE_SIZE / size;
