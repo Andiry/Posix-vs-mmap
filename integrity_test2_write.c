@@ -25,7 +25,6 @@ int main(int argc, char **argv)
 	unsigned long long count;
 	void *buf1 = NULL;
 	char *buf, *buf2;
-	FILE *output;
 	char fs_type[20];
 	char quill_enabled[40];
 	char file_size_num[20];
@@ -71,7 +70,6 @@ int main(int argc, char **argv)
 
 	strcpy(filename, argv[5]);
 	c = filename[0];
-	output = fopen(filename, "a");
 
 	if (posix_memalign(&buf1, END_SIZE, END_SIZE)) { // up to 64MB
 		printf("ERROR - POSIX NOMEM!\n");
@@ -105,7 +103,6 @@ int main(int argc, char **argv)
 //	fsync(fd);
 	close(fd);
 
-	fclose(output);
 	free(buf1);
 	free(buf2);
 	return 0;
