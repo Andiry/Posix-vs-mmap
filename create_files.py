@@ -6,10 +6,10 @@ import os
 
 def main():
 	if len(sys.argv) < 3:
-		print "paramemter error"
+		print "paramemter error: #num #size"
 		sys.exit(0)
-	os.system("mkdir /mnt/ramdisk/footprint100000")
-	dir = "/mnt/ramdisk/footprint100000/log.00000"
+	os.system("mkdir /mnt/ramdisk/")
+	dir = "/mnt/ramdisk/log000"
 	num = int(sys.argv[1])
 	size = int(sys.argv[2])
 	
