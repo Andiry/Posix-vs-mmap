@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 	int size;
 	unsigned long long count;
 	void *buf1 = NULL;
-	char *buf;
+	char *buf, *data;
 	char file_size_num[20];
 	char filename[60];
 	int req_size;
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 	long long time1;
 
 	if (argc < 4) {
-		printf("Usage: ./latency_read $REQ_SIZE $FILE_SIZE $filename\n");
+		printf("Usage: ./mmap_write $REQ_SIZE $FILE_SIZE $filename\n");
 		return 0;
 	}
 
@@ -80,6 +80,7 @@ int main(int argc, char **argv)
 	if (req_size > END_SIZE)
 		req_size = END_SIZE;
 
+	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
 	size = req_size;
 	memset(buf, c, size);
 	lseek(fd, 0, SEEK_SET);
@@ -88,13 +89,13 @@ int main(int argc, char **argv)
 
 	clock_gettime(CLOCK_MONOTONIC, &begin);
 	for (i = 0; i < count; i++) {
-		if (read(fd, buf, size) != size)
-			printf("ERROR\n");
+		memset(data + size * i, c, size);
+		msync(data + size * i, size, MS_SYNC);
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
-	printf("Read %lld ns, average %lld ns\n", time1, time1 / count);
+	printf("Mmap write(memset) %lld ns, average %lld ns\n", time1, time1 / count);
 
 //	fsync(fd);
 	close(fd);
