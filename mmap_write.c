@@ -7,12 +7,81 @@
 #include<string.h>
 #include<malloc.h>
 #include<stdlib.h>
+#include<stdint.h>
 #include<sys/mman.h>
 #include<sys/time.h>
 
 #define END_SIZE	(4UL * 1024 * 1024) 
+#define FLUSH_ALIGN 64
+
+typedef uint64_t uintptr_t;
 
 const int start_size = 512;
+
+#define _mm_clflush(addr)\
+    asm volatile("clflush %0" : "+m" (*(volatile char *)addr));
+#define _mm_clflushopt(addr)\
+    asm volatile(".byte 0x66; clflush %0" : "+m" (*(volatile char *)addr));
+#define _mm_clwb(addr)\
+    asm volatile(".byte 0x66; xsaveopt %0" : "+m" (*(volatile char *)addr));
+#define _mm_pcommit()\
+    asm volatile(".byte 0x66, 0x0f, 0xae, 0xf8");
+
+static void
+flush_clflush(void *addr, size_t len)
+{
+
+    uintptr_t uptr;
+
+    /*
+     * Loop through cache-line-size (typically 64B) aligned chunks
+     * covering the given range.
+     */
+    for (uptr = (uintptr_t)addr & ~(FLUSH_ALIGN - 1);
+        uptr < (uintptr_t)addr + len; uptr += FLUSH_ALIGN)
+        _mm_clflush((char *)uptr);
+}
+
+static void
+flush_clflushopt(void *addr, size_t len)
+{
+
+    uintptr_t uptr;
+
+    /*
+     * Loop through cache-line-size (typically 64B) aligned chunks
+     * covering the given range.
+     */
+    for (uptr = (uintptr_t)addr & ~(FLUSH_ALIGN - 1);
+        uptr < (uintptr_t)addr + len; uptr += FLUSH_ALIGN) {
+        _mm_clflushopt((char *)uptr);
+    }
+}
+
+static void
+flush_clwb(void *addr, size_t len)
+{
+
+    uintptr_t uptr;
+
+    /*
+     * Loop through cache-line-size (typically 64B) aligned chunks
+     * covering the given range.
+     */
+    for (uptr = (uintptr_t)addr & ~(FLUSH_ALIGN - 1);
+        uptr < (uintptr_t)addr + len; uptr += FLUSH_ALIGN) {
+        _mm_clwb((char *)uptr);
+    }
+}
+
+static void
+drain_pcommit(void)
+{
+
+//    Func_predrain_fence();
+    _mm_pcommit();
+//    _mm_sfence();
+}
 
 int main(int argc, char **argv)
 {
@@ -24,7 +93,7 @@ int main(int argc, char **argv)
 	int size;
 	unsigned long long count;
 	void *buf1 = NULL;
-	char *buf, *data;
+	char *buf, *data, *addr;
 	char file_size_num[20];
 	char filename[60];
 	int req_size;
@@ -89,8 +158,11 @@ int main(int argc, char **argv)
 
 	clock_gettime(CLOCK_MONOTONIC, &begin);
 	for (i = 0; i < count; i++) {
-		memset(data + size * i, c, size);
-		msync(data + size * i, size, MS_SYNC);
+        addr = data + size * i;
+		memset(addr, c, size);
+//		msync(data + size * i, size, MS_SYNC);
+        flush_clwb(addr, size);
+//        drain_pcommit();
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
