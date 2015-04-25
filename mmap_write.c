@@ -13,6 +13,7 @@
 
 #define END_SIZE	(4UL * 1024 * 1024) 
 #define FLUSH_ALIGN 64
+#define CACHELINE_SIZE 64
 
 typedef uint64_t uintptr_t;
 
@@ -71,6 +72,40 @@ flush_clwb(void *addr, size_t len)
     for (uptr = (uintptr_t)addr & ~(FLUSH_ALIGN - 1);
         uptr < (uintptr_t)addr + len; uptr += FLUSH_ALIGN) {
         _mm_clwb((char *)uptr);
+    }
+}
+
+static void
+flush_movnti(void *buf, size_t len)
+{
+    int i;
+
+    for (i = 0; i < len; i += CACHELINE_SIZE) {
+        /* clflush is really expensive, degrading msync performance in
+         * particular. So, instead we do following to flush a cacheline :
+         * read followed by a non-temporal write (which flushes and invalidates
+         * the cacheline).
+         */
+
+        asm volatile (  "movq (%0), %%r8\n"
+                "movq 8(%0), %%r9\n"
+                "movq 16(%0), %%r10\n"
+                "movq 24(%0), %%r11\n"
+                "movq 32(%0), %%r12\n"
+                "movq 40(%0), %%r13\n"
+                "movq 48(%0), %%r14\n"
+                "movq 56(%0), %%r15\n"
+                "movnti %%r8, (%0)\n"
+                "movnti %%r9, 8(%0)\n"
+                "movnti %%r10, 16(%0)\n"
+                "movnti %%r11, 24(%0)\n"
+                "movnti %%r12, 32(%0)\n"
+                "movnti %%r13, 40(%0)\n"
+                "movnti %%r14, 48(%0)\n"
+                "movnti %%r15, 56(%0)\n"
+                :
+                :"r"((char *)buf+i)
+                :"%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15", "memory", "cc");
     }
 }
 
@@ -161,7 +196,7 @@ int main(int argc, char **argv)
         addr = data + size * i;
 		memset(addr, c, size);
 //		msync(data + size * i, size, MS_SYNC);
-        flush_clwb(addr, size);
+        flush_movnti(addr, size);
 //        drain_pcommit();
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
