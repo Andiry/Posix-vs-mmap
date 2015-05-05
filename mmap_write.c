@@ -190,13 +190,14 @@ int main(int argc, char **argv)
 	lseek(fd, 0, SEEK_SET);
 	count = FILE_SIZE / size;
 	printf("Start c: %c\n", c);
+	printf("mmap address: %p\n", data);
 
 	clock_gettime(CLOCK_MONOTONIC, &begin);
 	for (i = 0; i < count; i++) {
-        addr = data + size * i;
+	        addr = data + size * i;
 		memset(addr, c, size);
 //		msync(data + size * i, size, MS_SYNC);
-        flush_movnti(addr, size);
+	        flush_movnti(addr, size);
 //        drain_pcommit();
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
