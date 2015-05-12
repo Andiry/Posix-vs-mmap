@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 	char c;
 	char unit;
 	int size;
+	size_t ret;
 	unsigned long long count;
 	void *buf1 = NULL;
 	char *buf, *buf2;
@@ -92,8 +93,10 @@ int main(int argc, char **argv)
 	count = FILE_SIZE / size;
 	printf("Start c: %c\n", c);
 	for (i = 0; i < count; i++) {
-		if (write(fd, buf, size) != size)
-			printf("ERROR\n");
+		ret = write(fd, buf, size);
+		if (ret != size)
+			printf("ERROR: size incorrect: required %d, "
+				"returned %lu\n", size, ret);
 		c++;
 		if (c > 'z')
 			c = 'A';
