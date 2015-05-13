@@ -15,7 +15,7 @@
 
 #define END_SIZE	(4UL * 1024 * 1024) 
 
-const int start_size = 512;
+const int start_size = 64;
 unsigned long long FILE_SIZE;
 char **buf;
 int num_threads;
@@ -185,14 +185,14 @@ int main(int argc, char **argv)
 	}
 
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
-	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
 
 	//Warm up
 	printf("warm up...\n");
 //	count = FILE_SIZE / (size * num_threads);
-	for (i = 0; i < num_threads; i++) {
-		memcpy(buf[i], data, END_SIZE);
-	}
+//	for (i = 0; i < num_threads; i++) {
+//		memcpy(buf[i], data, END_SIZE);
+//	}
 	printf("warm up done.\n");
 
 	//Allocate the threads
