@@ -8,6 +8,7 @@
 #include<stdlib.h>
 #include<stdint.h>
 #include<stdbool.h>
+#include<pthread.h>
 #include<sys/mman.h>
 
 #include "memcpy.h"
@@ -21,6 +22,10 @@ int num_threads;
 int fd;
 int read;
 char *data;
+int waiting_threads;
+int finished_threads;
+pthread_cond_t	ready = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t	lock = PTHREAD_MUTEX_INITIALIZER;
 
 //Doorbell. Each 64 bytes long to avoid cache contention.
 volatile uint64_t doorbell[8 * 16];
@@ -59,20 +64,23 @@ inline void signal_pthread_finished(int pid)
 }
 
 
-void pthread_transfer(void *arg)
+void *pthread_transfer(void *arg)
 {
 	int pid = *(int *)arg;
 	size_t start_offset = FILE_SIZE / num_threads * pid;
 	int size = start_size;
-	unsigned long long count, offset;
+	unsigned long long count;
 	int i;
 	char *data_begin;
 
 //	printf("start pthread: %d\n", pid);
 	while (size <= END_SIZE) {
 		data_begin = data + start_offset;
-		while (!pthread_can_start(pid))
-			;
+		pthread_mutex_lock(&lock);
+		while (waiting_threads == 0)
+			pthread_cond_wait(&ready, &lock);
+		waiting_threads--;
+		pthread_mutex_unlock(&lock);
 
 		count = FILE_SIZE / (num_threads * size);
 		for (i = 0; i < count; i++) { 
@@ -83,18 +91,23 @@ void pthread_transfer(void *arg)
 			data_begin += size;
 		}
 
-		signal_pthread_finished(pid);
+		pthread_mutex_lock(&lock);
+		finished_threads++;
+		pthread_mutex_unlock(&lock);
+		if (finished_threads == num_threads)
+			pthread_cond_signal(&ready);
 		size <<= 1;
 	}
 
 	pthread_exit(0);
+	return NULL;
 }
 
 int main(int argc, char **argv)
 {
 	pthread_t *pthreads;
 	int pids[16];
-	int i, j;
+	int i;
 	long long time;
 	size_t len;
 	char c = 'a';
@@ -107,7 +120,6 @@ int main(int argc, char **argv)
 	char quill_enabled[40];
 	char file_size_num[20];
 	char filename[60];
-	unsigned long long offset;
 
 	if (argc < 7) {
 		printf("Usage: ./pthread_test_mmap $FS $QUILL $fops $num_threads $FILE_SIZE $filename\n");
@@ -198,10 +210,17 @@ int main(int argc, char **argv)
 		lseek(fd, 0, SEEK_SET);
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		start_all_pthreads();
+		pthread_mutex_lock(&lock);
+		waiting_threads = num_threads;
+		finished_threads = 0;
+		pthread_mutex_unlock(&lock);
+		pthread_cond_broadcast(&ready);
 
-		while (!all_pthreads_finished())
-			;
+		pthread_mutex_lock(&lock);
+		while (finished_threads != num_threads)
+			pthread_cond_wait(&ready, &lock);
+		pthread_mutex_unlock(&lock);
+
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
