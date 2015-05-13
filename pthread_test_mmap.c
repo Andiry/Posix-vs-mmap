@@ -15,16 +15,19 @@
 
 #define END_SIZE	(4UL * 1024 * 1024) 
 
-const int start_size = 64;
+const int start_size = 2048;
 unsigned long long FILE_SIZE;
-char **buf;
+char *buf;
 int num_threads;
 int fd;
 int read;
 char *data;
-int waiting_threads;
-int finished_threads;
+volatile char *data1;
+volatile int waiting_threads;
+volatile int finished_threads;
+volatile int size;
 pthread_cond_t	ready = PTHREAD_COND_INITIALIZER;
+pthread_cond_t	finish = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t	lock = PTHREAD_MUTEX_INITIALIZER;
 
 //Doorbell. Each 64 bytes long to avoid cache contention.
@@ -67,36 +70,36 @@ inline void signal_pthread_finished(int pid)
 void *pthread_transfer(void *arg)
 {
 	int pid = *(int *)arg;
-	size_t start_offset = FILE_SIZE / num_threads * pid;
-	int size = start_size;
 	unsigned long long count;
+	int unit = size / num_threads;
+	size_t offset = unit * pid;
 	int i;
 	char *data_begin;
 
 //	printf("start pthread: %d\n", pid);
-	while (size <= END_SIZE) {
-		data_begin = data + start_offset;
+
+	while(1) {
+		unit = size / num_threads;
 		pthread_mutex_lock(&lock);
 		while (waiting_threads == 0)
 			pthread_cond_wait(&ready, &lock);
-		waiting_threads--;
+		waiting_threads &= ~(1 << pid);
 		pthread_mutex_unlock(&lock);
 
-		count = FILE_SIZE / (num_threads * size);
-		for (i = 0; i < count; i++) { 
-			if (read)
-				memcpy(buf[pid], data_begin, size);
-			else 
-				mmx2_memcpy(data_begin, buf[pid], size);
-			data_begin += size;
-		}
+		data_begin = data1 + offset;
+//		printf("start pthread: %d, %p, %d, %d\n", pid, data_begin, size, unit);
+		if (read)
+			memcpy(buf + offset, data_begin, unit);
+		else 
+			mmx2_memcpy(data_begin, buf + offset, unit);
 
+//		printf("Finish pthread: %d\n", pid);
 		pthread_mutex_lock(&lock);
-		finished_threads++;
+		finished_threads |= 1 << pid;
+//		printf("Finished pthreads: %d\n", finished_threads);
 		pthread_mutex_unlock(&lock);
-		if (finished_threads == num_threads)
-			pthread_cond_signal(&ready);
-		size <<= 1;
+		if (finished_threads == (1 << num_threads) - 1)
+			pthread_cond_signal(&finish);
 	}
 
 	pthread_exit(0);
@@ -113,7 +116,6 @@ int main(int argc, char **argv)
 	char c = 'a';
 	char unit;
 	struct timespec start, end;
-	int size;
 	unsigned long long count;
 	FILE *output;
 	char fs_type[20];
@@ -175,17 +177,13 @@ int main(int argc, char **argv)
 	output = fopen(filename, "a");
 
 	printf("# pthreads: %d\n", num_threads);
-	buf = (char **)malloc(num_threads * sizeof(char *));
 
-	for (i = 0; i < num_threads; i++) { 
-		if (posix_memalign((void **)(buf + i), END_SIZE, END_SIZE)) { // up to 64MB
-			printf("ERROR - POSIX NOMEM!\n");
-			return 0;
-		}
-	}
+	if (posix_memalign((void *)&buf, END_SIZE, END_SIZE)) // up to 64MB
+		return 0;
 
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
+	data1 = data;
 
 	//Warm up
 	printf("warm up...\n");
@@ -203,23 +201,30 @@ int main(int argc, char **argv)
 	}
 
 	for (size = start_size; size <= END_SIZE; size <<= 1) {
-		count = FILE_SIZE / (size * num_threads);
-		for (i = 0; i < num_threads; i++)
-			memset(buf[i], c, size);
-		c++;
+		count = FILE_SIZE / size;
 		lseek(fd, 0, SEEK_SET);
+		data1 = data;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		pthread_mutex_lock(&lock);
-		waiting_threads = num_threads;
-		finished_threads = 0;
-		pthread_mutex_unlock(&lock);
-		pthread_cond_broadcast(&ready);
+		for (i = 0; i < count; i++) {
+//			printf("%d\n", i);
+			pthread_mutex_lock(&lock);
+//			printf("Set threads %d\n", i);
+			waiting_threads = (1 << num_threads) - 1;
+			finished_threads = 0;
+			pthread_mutex_unlock(&lock);
+			pthread_cond_broadcast(&ready);
 
-		pthread_mutex_lock(&lock);
-		while (finished_threads != num_threads)
-			pthread_cond_wait(&ready, &lock);
-		pthread_mutex_unlock(&lock);
+			pthread_mutex_lock(&lock);
+//			printf("Waiting %d\n", i);
+			while (finished_threads != (1 << num_threads) - 1) {
+//				printf("Checking: %d\n", finished_threads);
+				pthread_cond_wait(&finish, &lock);
+			}
+//			printf("Finished %d\n", i);
+			pthread_mutex_unlock(&lock);
+			data1 += size;
+		}
 
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
@@ -232,7 +237,6 @@ int main(int argc, char **argv)
 	close(fd);
 	for (i = 0; i < num_threads; i++) {
 		pthread_join(pthreads[i], NULL);
-		free(buf[i]);
 	}
 	free(buf);
 	free(pthreads);
