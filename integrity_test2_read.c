@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 		ret = read(fd, buf, size);
 		if (ret != size)
 			printf("ERROR: size incorrect: required %d, "
-				"returned %lu\n", size, ret);
+				"returned %d\n", size, ret);
 		if (buf[0] != c || buf[size - 1] != c)
 			printf("ERROR: test char %c, buf start %c, buf end %c\n",
 				c, buf[0], buf[size - 1]);

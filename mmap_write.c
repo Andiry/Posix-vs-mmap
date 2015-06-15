@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
 	printf("Mmap write(memset) %lld ns, average %lld ns\n", time1, time1 / count);
 
-//	fsync(fd);
+	msync(data, FILE_SIZE, MS_SYNC);
 	close(fd);
 
 	free(buf1);
