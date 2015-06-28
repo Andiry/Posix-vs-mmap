@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 	if (req_size > END_SIZE)
 		req_size = END_SIZE;
 
-	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
+	data = (char *)mmap(NULL, FILE_SIZE, PROT_READ, MAP_SHARED | MAP_POPULATE, fd, 0);
 	size = req_size;
 	memset(buf, c, size);
 	lseek(fd, 0, SEEK_SET);

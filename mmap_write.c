@@ -196,6 +196,9 @@ int main(int argc, char **argv)
 	for (i = 0; i < count; i++) {
 	        addr = data + size * i;
 		memset(addr, c, size);
+		c++;
+		if (c > 'z')
+			c = 'A';
 //		msync(data + size * i, size, MS_SYNC);
 	        flush_movnti(addr, size);
 //        drain_pcommit();
