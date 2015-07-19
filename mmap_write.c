@@ -200,15 +200,20 @@ int main(int argc, char **argv)
 		if (c > 'z')
 			c = 'A';
 //		msync(data + size * i, size, MS_SYNC);
-//	        flush_movnti(addr, size);
-//        drain_pcommit();
+//		flush_movnti(addr, size);
+//		drain_pcommit();
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
 	printf("Mmap write(memset) %lld ns, average %lld ns\n", time1, time1 / count);
 
+	clock_gettime(CLOCK_MONOTONIC, &begin);
 	msync(data, FILE_SIZE, MS_SYNC);
+	clock_gettime(CLOCK_MONOTONIC, &finish);
+	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
+	printf("Msync %lld ns, average %lld ns\n", time1, time1 / count);
+
 	close(fd);
 
 	free(buf1);
