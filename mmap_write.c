@@ -200,7 +200,7 @@ int main(int argc, char **argv)
 		if (c > 'z')
 			c = 'A';
 //		msync(data + size * i, size, MS_SYNC);
-	        flush_movnti(addr, size);
+//	        flush_movnti(addr, size);
 //        drain_pcommit();
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
