@@ -96,6 +96,11 @@ int main(int argc, char **argv)
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
 	printf("Mmap read(memcpy) %lld ns, average %lld ns\n", time1, time1 / count);
 
+	clock_gettime(CLOCK_MONOTONIC, &begin);
+	msync(data, FILE_SIZE, MS_SYNC);
+	clock_gettime(CLOCK_MONOTONIC, &finish);
+	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
+	printf("Msync %lld ns, average %lld ns\n", time1, time1 / count);
 //	fsync(fd);
 	close(fd);
 
