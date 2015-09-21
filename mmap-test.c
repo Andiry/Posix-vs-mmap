@@ -76,7 +76,7 @@ int main(int argc, char ** argv)
 
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 	clock_gettime(CLOCK_MONOTONIC, &start);
-	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
 	clock_gettime(CLOCK_MONOTONIC, &end);
 
 	time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
