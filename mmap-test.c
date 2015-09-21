@@ -84,7 +84,7 @@ int main(int argc, char ** argv)
 		FILE_SIZE, count, time, time / count);
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
-	msync(data, FILE_SIZE, MS_ASYNC);
+	msync(data, FILE_SIZE, MS_SYNC);
 	clock_gettime(CLOCK_MONOTONIC, &end);
 
 	time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
