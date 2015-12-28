@@ -125,6 +125,18 @@ int main(int argc, char **argv)
 			time / (num_files * count));
 	}
 
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	for (file_count = 0; file_count < num_files; file_count++) {
+		sprintf(filename, "%s%d", dir, file_count);
+		fd = unlink(filename);
+	}
+
+	clock_gettime(CLOCK_MONOTONIC, &end);
+	time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+	printf("delete files: %d files, %lld nanoseconds, "
+		"per file latency %lld nanoseconds.\n",
+		num_files, time, time / num_files);
+
 	free(buf1);
 	free(buf2);
 	return 0;
