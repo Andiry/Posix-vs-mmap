@@ -65,8 +65,6 @@ int main(int argc, char **argv)
 		break;
 	}
 
-	if (FILE_SIZE < 4096)
-		FILE_SIZE = 4096;
 	if (FILE_SIZE > 2147483648) // RAM disk size
 		FILE_SIZE = 2147483648;
 
@@ -97,13 +95,14 @@ int main(int argc, char **argv)
 
 	clock_gettime(CLOCK_MONOTONIC, &end);
 	time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-	printf("create files: %d files, %lld nanoseconds, per file latency %lld nanoseconds.\n",
+	printf("create files: %d files, %lld nanoseconds, "
+		"per file latency %lld nanoseconds.\n",
 		num_files, time, time / num_files);
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	for (file_count = 0; file_count < num_files; file_count++) {
 		sprintf(filename, "%s%d", dir, file_count);
-		fd = open(filename, O_CREAT | O_RDWR, 0640);
+		fd = open(filename, O_RDWR, 0640);
 
 		lseek(fd, 0, SEEK_SET);
 		for (i = 0; i < count; i++) {
@@ -118,9 +117,13 @@ int main(int argc, char **argv)
 
 	clock_gettime(CLOCK_MONOTONIC, &end);
 	time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-	printf("write files: %d files, %lld nanoseconds, per file latency %lld nanoseconds, "
-		"per request latency %lld nanoseconds.\n",
-		num_files, time, time / num_files, time / (num_files * count));
+	if (count) {
+		printf("write files: %d files, %lld nanoseconds, "
+			"per file latency %lld nanoseconds, "
+			"per request latency %lld nanoseconds.\n",
+			num_files, time, time / num_files,
+			time / (num_files * count));
+	}
 
 	free(buf1);
 	free(buf2);
