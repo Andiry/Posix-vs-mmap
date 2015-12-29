@@ -112,6 +112,7 @@ int main(int argc, char **argv)
 					"returned %lu\n", size, ret);
 		}
 
+		fsync(fd);
 		close(fd);
 	}
 
