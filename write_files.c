@@ -108,8 +108,8 @@ int main(int argc, char **argv)
 		for (i = 0; i < count; i++) {
 			ret = write(fd, buf, size);
 			if (ret != size)
-				printf("ERROR: size incorrect: required %d, "
-					"returned %lu\n", size, ret);
+				printf("ERROR: %s size incorrect: required %d, "
+					"returned %lu\n", filename, size, ret);
 		}
 
 		fsync(fd);
