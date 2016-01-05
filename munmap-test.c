@@ -71,11 +71,11 @@ int main(int argc, char ** argv)
 	}
 
 	memset(buf1, 'a', END_SIZE);
-	count = FILE_SIZE / 4096;
+	count = FILE_SIZE / END_SIZE;
 
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640);
 	for (i = 0; i < count; i++)
-		write(fd, buf1, 4096);
+		write(fd, buf1, END_SIZE);
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
