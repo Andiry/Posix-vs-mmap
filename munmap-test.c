@@ -78,23 +78,30 @@ int main(int argc, char ** argv)
 		write(fd, buf1, END_SIZE);
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
-	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
-	memset(data, 'b', FILE_SIZE);
+	data = (char *)mmap(NULL, END_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
+	memset(data, 'b', END_SIZE);
 	clock_gettime(CLOCK_MONOTONIC, &end);
+//	munmap(data, END_SIZE);
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	data = (char *)mmap(NULL, END_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 8192);
+	memset(data, 'c', END_SIZE);
+	clock_gettime(CLOCK_MONOTONIC, &end);
+//	munmap(data, END_SIZE);
 
 	time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 	printf("mmap: Size %lld bytes,\t %d pages,\t %lld nanoseconds,\t %lld nanoseconds per page\n",
 		FILE_SIZE, count, time, time / count);
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
-//	msync(data, FILE_SIZE, MS_SYNC);
+	msync(data, END_SIZE, MS_SYNC);
 	clock_gettime(CLOCK_MONOTONIC, &end);
 
 	time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
 	printf("msync: Size %lld bytes,\t %d pages,\t %lld nanoseconds,\t %lld nanoseconds per page\n",
 		FILE_SIZE, count, time, time / count);
 
-	munmap(data, FILE_SIZE);
+	munmap(data, END_SIZE);
 	close(fd);
 	free(buf1);
 	return 0;
