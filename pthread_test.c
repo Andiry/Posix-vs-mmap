@@ -63,7 +63,7 @@ inline void signal_pthread_finished(int pid)
 }
 
 
-void pthread_transfer(void *arg)
+void* pthread_transfer(void *arg)
 {
 	int pid = *(int *)arg;
 	unsigned long long start_offset = FILE_SIZE / num_threads * pid;
@@ -97,6 +97,7 @@ void pthread_transfer(void *arg)
 	}
 
 	pthread_exit(0);
+	return NULL;
 }
 
 int main(int argc, char **argv)
