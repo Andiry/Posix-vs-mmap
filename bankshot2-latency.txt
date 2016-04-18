@@ -1,4 +1,0 @@
-4KB latency (ns)	read	write
-
-Page cache (BB)		708	1330
-Bankshot2 (BB)		525	767
