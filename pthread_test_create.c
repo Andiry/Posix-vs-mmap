@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 	struct timespec start, end;
 
 	if (argc < 3) {
-		printf("Usage: ./pthread_test $NUM_FILE $NUM_THREADS\n");
+		printf("Usage: ./pthread_test_create $NUM_FILE $NUM_THREADS\n");
 		return 0;
 	}
 
