@@ -12,10 +12,10 @@
 #include<sys/mman.h>
 #include<sys/time.h>
 
-
-char *dir = "/mnt/ramdisk/file_";
+int shared_counter;
+volatile int atomic_counter;
 int num_threads;
-int num_files;
+int num;
 
 //Doorbell. Each 64 bytes long to avoid cache contention.
 volatile uint64_t doorbell[8 * 16];
@@ -56,31 +56,25 @@ inline void signal_pthread_finished(int pid)
 
 void* pthread_file_create(void *arg)
 {
-	struct timespec start, end;
+	struct timespec start, end, temp;
 	long long time;
-	char filename[60];
-//	char command[120];
 	int pid = *(int *)arg;
-	int fd;
-	int file_count;
+	int i;
 
 //	printf("start pthread: %d\n", pid);
 	while (!pthread_can_start(pid))
 		;
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
-	for (file_count = 0; file_count < num_files; file_count++) {
-		sprintf(filename, "%s%d%d", dir, pid, file_count);
-//		sprintf(command, "%s %s", "touch", filename);
-//		system(command);
-		fd = open(filename, O_CREAT | O_RDWR, 0640);
-
-		close(fd);
+	for (i = 0; i < num; i++) {
+//		shared_counter++;
+//		__sync_fetch_and_add(&atomic_counter, 1);
+		clock_gettime(CLOCK_MONOTONIC, &temp);
 	}
 	clock_gettime(CLOCK_MONOTONIC, &end);
 
 	time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-	printf("Thread %d: %lld nanoseconds, each %lld ns\n", pid, time, time / num_files);
+	printf("Thread %d: %lld nanoseconds, each %lld ns\n", pid, time, time / num);
 
 	signal_pthread_finished(pid);
 
@@ -97,18 +91,17 @@ int main(int argc, char **argv)
 	struct timespec start, end;
 
 	if (argc < 3) {
-		printf("Usage: ./pthread_test_create $NUM_FILE $NUM_THREADS\n");
+		printf("Usage: ./pthread_counter $NUM $NUM_THREADS\n");
 		return 0;
 	}
 
-	num_files = atoi(argv[1]);
+	num = atoi(argv[1]);
 
 	num_threads = atoi(argv[2]);
 	if (num_threads <= 0 || num_threads > 16)
 		num_threads = 1;
 
-	printf("%d files, %d pthreads\n", num_files, num_threads);
-	system("rm -rf /mnt/ramdisk/*");
+	printf("%d, %d pthreads\n", num, num_threads);
 
 	//Allocate the threads
 	pthreads = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
@@ -125,7 +118,9 @@ int main(int argc, char **argv)
 	clock_gettime(CLOCK_MONOTONIC, &end);
 
 	time = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
-	printf("%lld nanoseconds, each %lld ns\n", time, time / (num_files * num_threads));
+	printf("%lld nanoseconds, each %lld ns\n", time, time / (num * num_threads));
+	printf("Shared counter %d\n", shared_counter);
+	printf("Atomic counter %d\n", atomic_counter);
 
 	for (i = 0; i < num_threads; i++) {
 		pthread_join(pthreads[i], NULL);
