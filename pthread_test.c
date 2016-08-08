@@ -12,7 +12,7 @@
 #include<sys/mman.h>
 #include<sys/time.h>
 
-#define END_SIZE	(4UL * 1024 * 1024) 
+#define END_SIZE	(4UL * 1024 * 1024)
 
 const int start_size = 512;
 unsigned long long FILE_SIZE;
@@ -211,6 +211,7 @@ int main(int argc, char **argv)
 			offset += size;
 		}
 	}
+	printf("warm up finished\n");
 
 	//Allocate the threads
 	pthreads = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
