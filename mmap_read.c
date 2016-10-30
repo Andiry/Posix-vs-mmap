@@ -76,6 +76,11 @@ int main(int argc, char **argv)
 	buf = (char *)buf1;
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 	printf("fd: %d\n", fd);
+	count = FILE_SIZE / END_SIZE;
+	for (i = 0; i < count; i++) {
+		write(fd, buf, END_SIZE);
+	}
+
 	req_size = atoi(argv[1]);
 	if (req_size > END_SIZE)
 		req_size = END_SIZE;
