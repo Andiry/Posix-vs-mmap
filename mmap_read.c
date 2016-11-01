@@ -77,6 +77,9 @@ int main(int argc, char **argv)
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 	printf("fd: %d\n", fd);
 	count = FILE_SIZE / END_SIZE;
+	if (count == 0)
+		count++;
+
 	for (i = 0; i < count; i++) {
 		write(fd, buf, END_SIZE);
 	}

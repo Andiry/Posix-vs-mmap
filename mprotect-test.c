@@ -77,6 +77,9 @@ int main(int argc, char **argv)
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 	printf("fd: %d\n", fd);
 	count = FILE_SIZE / END_SIZE;
+	if (count == 0)
+		count++;
+
 	for (i = 0; i < count; i++) {
 		write(fd, buf, END_SIZE);
 	}
@@ -99,7 +102,7 @@ int main(int argc, char **argv)
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
-	printf("Mmap read(memcpy) %lld ns, average %lld ns\n", time1, time1 / count);
+	printf("Mmap write(memcpy) %lld ns, average %lld ns\n", time1, time1 / count);
 
 	clock_gettime(CLOCK_MONOTONIC, &begin);
 	msync(data, FILE_SIZE, MS_SYNC);
@@ -107,9 +110,12 @@ int main(int argc, char **argv)
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
 	printf("Msync %lld ns, average %lld ns\n", time1, time1 / count);
 
-	printf("Mprotect: PROT_READ\n");
-	mprotect(data, FILE_SIZE, PROT_READ);
+	printf("Sleep for 10 seconds..\n");
+//	mprotect(data, FILE_SIZE, PROT_READ);
 
+	sleep(10);
+
+	printf("Sleep done.\n");
 	clock_gettime(CLOCK_MONOTONIC, &begin);
 	for (i = 0; i < count; i++) {
 		memcpy(data + size * i, buf, size);
