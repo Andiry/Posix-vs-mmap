@@ -3,16 +3,41 @@
 #include<stdio.h>
 #include<fcntl.h>
 #include<unistd.h>
+#include<signal.h>
 #include<time.h>
 #include<string.h>
 #include<malloc.h>
 #include<stdlib.h>
 #include<sys/mman.h>
+#include <sys/ioctl.h>
 #include<sys/time.h>
 
 #define END_SIZE	(4UL * 1024 * 1024) 
+#define	NOVA_RESTORE_MMAP_WRITE		0xBCD00019
 
 const int start_size = 512;
+unsigned long long global_file_size;
+int global_fd;
+char *global_addr;
+
+static void handler(int sig, siginfo_t *si, void *unused)
+{
+	unsigned long addr;
+	addr = (unsigned long)si->si_addr;
+
+	ioctl(global_fd, NOVA_RESTORE_MMAP_WRITE, &addr);
+	printf("SIGSEGV at address 0x%lx\n", addr);
+}
+
+static void setup_handler(void)
+{
+	struct sigaction sa;
+
+	sa.sa_flags = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_sigaction = handler;
+	sigaction(SIGSEGV, &sa, NULL);
+}
 
 int main(int argc, char **argv)
 {
@@ -35,6 +60,8 @@ int main(int argc, char **argv)
 		printf("Usage: ./mmap_read $REQ_SIZE $FILE_SIZE $filename\n");
 		return 0;
 	}
+
+	setup_handler();
 
 	strcpy(file_size_num, argv[2]);
 	len = strlen(file_size_num);
@@ -88,15 +115,20 @@ int main(int argc, char **argv)
 	if (req_size > END_SIZE)
 		req_size = END_SIZE;
 
-	data = (char *)mmap(NULL, FILE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
+	data = (char *)mmap(NULL, FILE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 4096);
 	size = req_size;
 	memset(buf, c, size);
 	lseek(fd, 0, SEEK_SET);
 	count = FILE_SIZE / size;
 	printf("Start c: %c\n", c);
+	printf("addr: %p\n", data);
+	printf("count: %d\n", count);
+	global_file_size = FILE_SIZE;
+	global_fd = fd;
+	global_addr = data;
 
 	clock_gettime(CLOCK_MONOTONIC, &begin);
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < count - 1; i++) {
 		memcpy(data + size * i, buf, size);
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
@@ -116,8 +148,9 @@ int main(int argc, char **argv)
 	sleep(10);
 
 	printf("Sleep done.\n");
+	memset(buf, 'z', size);
 	clock_gettime(CLOCK_MONOTONIC, &begin);
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < count - 1; i++) {
 		memcpy(data + size * i, buf, size);
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
