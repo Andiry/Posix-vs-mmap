@@ -12,7 +12,7 @@
 #include <sys/ioctl.h>
 #include<sys/time.h>
 
-#define END_SIZE	(4UL * 1024 * 1024) 
+#define END_SIZE	(4UL * 1024)
 #define	NOVA_RESTORE_MMAP_WRITE		0xBCD00019
 
 const int start_size = 512;
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 {
 	int fd, i;
 	unsigned long long FILE_SIZE;
-	size_t len;
+	size_t len, offset;
 	char c;
 	char unit;
 	int size;
@@ -101,6 +101,7 @@ int main(int argc, char **argv)
 	}
 
 	buf = (char *)buf1;
+	memset(buf, 'a', END_SIZE);
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 	printf("fd: %d\n", fd);
 	count = FILE_SIZE / END_SIZE;
@@ -115,7 +116,8 @@ int main(int argc, char **argv)
 	if (req_size > END_SIZE)
 		req_size = END_SIZE;
 
-	data = (char *)mmap(NULL, FILE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 4096);
+	offset = 4096;
+	data = (char *)mmap(NULL, FILE_SIZE - offset, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
 	size = req_size;
 	memset(buf, c, size);
 	lseek(fd, 0, SEEK_SET);
@@ -150,7 +152,7 @@ int main(int argc, char **argv)
 	printf("Sleep done.\n");
 	memset(buf, 'z', size);
 	clock_gettime(CLOCK_MONOTONIC, &begin);
-	for (i = 0; i < count - 1; i++) {
+	for (i = 2; i < count - 1; i++) {
 		memcpy(data + size * i, buf, size);
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
