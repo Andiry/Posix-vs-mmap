@@ -12,7 +12,7 @@
 #include <sys/ioctl.h>
 #include<sys/time.h>
 
-#define END_SIZE	(4UL * 1024)
+#define END_SIZE	(4UL * 1024 * 1024)
 #define	NOVA_RESTORE_MMAP_WRITE		0xBCD00019
 
 const int start_size = 512;
@@ -43,6 +43,7 @@ int main(int argc, char **argv)
 {
 	int fd, i;
 	unsigned long long FILE_SIZE;
+	unsigned long bufsize;
 	size_t len, offset;
 	char c;
 	char unit;
@@ -95,21 +96,25 @@ int main(int argc, char **argv)
 	strcpy(filename, argv[3]);
 	c = filename[0];
 
-	if (posix_memalign(&buf1, END_SIZE, END_SIZE)) { // up to 64MB
+	bufsize = END_SIZE;
+	if (bufsize > FILE_SIZE)
+		bufsize = FILE_SIZE;
+
+	if (posix_memalign(&buf1, bufsize, bufsize)) { // up to 64MB
 		printf("ERROR - POSIX NOMEM!\n");
 		return 0;
 	}
 
 	buf = (char *)buf1;
-	memset(buf, 'a', END_SIZE);
+	memset(buf, 'a', bufsize);
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 	printf("fd: %d\n", fd);
-	count = FILE_SIZE / END_SIZE;
+	count = FILE_SIZE / bufsize;
 	if (count == 0)
 		count++;
 
 	for (i = 0; i < count; i++) {
-		write(fd, buf, END_SIZE);
+		write(fd, buf, bufsize);
 	}
 
 	req_size = atoi(argv[1]);
