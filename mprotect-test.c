@@ -121,10 +121,10 @@ int main(int argc, char **argv)
 	if (req_size > END_SIZE)
 		req_size = END_SIZE;
 
-	offset = 4096;
+	offset = 0;
 	data = (char *)mmap(NULL, FILE_SIZE - offset, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
 	size = req_size;
-	memset(buf, c, size);
+	memset(buf, c, bufsize);
 	lseek(fd, 0, SEEK_SET);
 	count = FILE_SIZE / size;
 	printf("Start c: %c\n", c);
@@ -134,10 +134,12 @@ int main(int argc, char **argv)
 	global_fd = fd;
 	global_addr = data;
 
+	sleep(5);
 	clock_gettime(CLOCK_MONOTONIC, &begin);
-	for (i = 0; i < count - 1; i++) {
-		memcpy(data + size * i, buf, size);
-	}
+//	for (i = 0; i < count - 1; i++) {
+//		memcpy(data + size * i, buf, size);
+		pwrite(fd, buf, size * 3, 4096);
+//	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
@@ -150,18 +152,19 @@ int main(int argc, char **argv)
 	printf("Msync %lld ns, average %lld ns\n", time1, time1 / count);
 
 	printf("Sleep for 10 seconds..\n");
-//	mprotect(data, FILE_SIZE, PROT_READ);
+	mprotect(data + 4096, 4096, PROT_READ);
 
-	sleep(10);
 
 	printf("Sleep done.\n");
-	memset(buf, 'z', size);
+	memset(buf, 'z', bufsize);
 	clock_gettime(CLOCK_MONOTONIC, &begin);
-	for (i = 2; i < count - 1; i++) {
-		memcpy(data + size * i, buf, size);
-	}
+//	for (i = 2; i < count - 1; i++) {
+//		memcpy(data + size * i, buf, size);
+//	}
+		write(fd, buf, bufsize);
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
+	sleep(5);
 //	fsync(fd);
 	close(fd);
 
