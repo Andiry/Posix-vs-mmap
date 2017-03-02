@@ -13,31 +13,11 @@
 #include<sys/time.h>
 
 #define END_SIZE	(4UL * 1024 * 1024)
-#define	NOVA_RESTORE_MMAP_WRITE		0xBCD00019
 
 const int start_size = 512;
 unsigned long long global_file_size;
 int global_fd;
 char *global_addr;
-
-static void handler(int sig, siginfo_t *si, void *unused)
-{
-	unsigned long addr;
-	addr = (unsigned long)si->si_addr;
-
-	ioctl(global_fd, NOVA_RESTORE_MMAP_WRITE, &addr);
-	printf("SIGSEGV at address 0x%lx\n", addr);
-}
-
-static void setup_handler(void)
-{
-	struct sigaction sa;
-
-	sa.sa_flags = SA_SIGINFO;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_sigaction = handler;
-	sigaction(SIGSEGV, &sa, NULL);
-}
 
 int main(int argc, char **argv)
 {
@@ -61,8 +41,6 @@ int main(int argc, char **argv)
 		printf("Usage: ./mmap_read $REQ_SIZE $FILE_SIZE $filename\n");
 		return 0;
 	}
-
-	setup_handler();
 
 	strcpy(file_size_num, argv[2]);
 	len = strlen(file_size_num);
@@ -134,11 +112,11 @@ int main(int argc, char **argv)
 	global_fd = fd;
 	global_addr = data;
 
-	sleep(5);
+	sleep(10);
 	clock_gettime(CLOCK_MONOTONIC, &begin);
 //	for (i = 0; i < count - 1; i++) {
 //		memcpy(data + size * i, buf, size);
-		pwrite(fd, buf, size * 3, 4096);
+//		pwrite(fd, buf, size * 3, 4096);
 //	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
@@ -154,6 +132,8 @@ int main(int argc, char **argv)
 	printf("Sleep for 10 seconds..\n");
 	mprotect(data + 4096, 4096, PROT_READ);
 
+	*data = 'd';
+//	*(data + 4096 + 1) = 'd';
 
 	printf("Sleep done.\n");
 	memset(buf, 'z', bufsize);
