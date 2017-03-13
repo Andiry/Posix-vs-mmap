@@ -17,7 +17,7 @@ def main():
 	while count < num:
 		print "Making snapshot " + str(count) + "."
 		if fs == "NOVA":
-			os.system("echo 1 > /proc/fs/NOVA/pmem0m/create_snapshot")
+			os.system("echo 1 > /proc/fs/NOVA/pmem0/create_snapshot")
 		elif fs == "btrfs":
 			os.system("btrfs subvolume snapshot /mnt/ramdisk /mnt/ramdisk/snapshot-%d" % count)
 		elif fs == "nilfs2":
