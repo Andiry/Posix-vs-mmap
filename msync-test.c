@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 	long long time1;
 
 	if (argc < 4) {
-		printf("Usage: ./mmap_read $REQ_SIZE $FILE_SIZE $filename\n");
+		printf("Usage: ./msync-test $REQ_SIZE $FILE_SIZE $filename\n");
 		return 0;
 	}
 
