@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
 	time1 = (finish.tv_sec * 1e9 + finish.tv_nsec) - (begin.tv_sec * 1e9 + begin.tv_nsec);
-	printf("write %lld ns, average %lld ns\n", time1, time1 / count);
+	printf("write %lld ns, average %lld ns, bandwidth %lld MB/s\n", time1, time1 / count, FILE_SIZE / (time1 / 1000));
 
 //	fsync(fd);
 	close(fd);
