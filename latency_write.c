@@ -90,6 +90,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < count; i++) {
 		if (write(fd, buf, size) != size)
 			printf("ERROR\n");
+//		fsync(fd);
 	}
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
