@@ -92,9 +92,10 @@ int main(int argc, char ** argv)
 	fd = open("/mnt/ramdisk/test1", O_CREAT | O_RDWR, 0640); 
 
 	gettimeofday(&begin, &tz);
-//	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
-	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
+	data = (char *)mmap(NULL, FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+//	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd, 0);
 //	data = (char *)mmap(NULL, 1073741824, PROT_WRITE, MAP_SHARED, fd, 0);
+	printf("data %p\n", data);
 	origin_data = data;
 	gettimeofday(&finish, &tz);
 
@@ -131,8 +132,8 @@ int main(int argc, char ** argv)
 	
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (i = 0; i < count; i++) {
-//			mmx2_memcpy(data, buf, size);
-			memcpy(buf, data, size);
+			memcpy(data, buf, size);
+//			memcpy(buf, data, size);
 			data += size;
 		}
 //		msync(origin_data, FILE_SIZE, MS_ASYNC);
@@ -149,8 +150,8 @@ int main(int argc, char ** argv)
 	}
 
 	fclose(output);
-//	munmap(origin_data, FILE_SIZE);
-	munmap(origin_data, 1073741824);
+	munmap(origin_data, FILE_SIZE);
+//	munmap(origin_data, 1073741824);
 	close(fd);
 	free(buf1);
 	return 0;
