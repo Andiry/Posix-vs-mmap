@@ -215,6 +215,8 @@ int main(int argc, char **argv)
 	printf("Msync %lld ns, average %lld ns\n", time1, time1 / count);
 
 	close(fd);
+	memset(data, 'd', 40);
+	munmap(data, FILE_SIZE);
 
 	free(buf1);
 	return 0;
